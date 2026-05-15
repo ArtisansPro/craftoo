@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/jpeg" href="icon.jpg">
+<link rel="apple-touch-icon" href="icon.jpg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0A3880">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Craftoo</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F4F8;color:#1A1A2E;overflow:hidden;}
+.app{max-width:500px;margin:0 auto;height:100vh;display:flex;flex-direction:column;background:#F0F4F8;overflow:hidden;}
+.screen{display:none;flex-direction:column;height:100%;overflow:hidden;}
+.screen.active{display:flex;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;}
+.lb-bar{background:#0A3880;display:flex;justify-content:center;gap:4px;padding:6px 8px;flex-shrink:0;flex-wrap:wrap;}
+.lb{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);border-radius:20px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:700;}
+.lb.on{background:#fff;color:#0A3880;}
+.hdr{background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;padding:13px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.hdr-t{flex:1;font-size:16px;font-weight:800;}
+.back{background:rgba(255,255,255,0.18);border:none;color:#fff;border-radius:9px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;}
+.hero{background:linear-gradient(160deg,#1565C0 0%,#1E88E5 100%);padding:14px 16px 20px;color:#fff;flex-shrink:0;}
+.app-name{font-size:26px;font-weight:900;letter-spacing:-1px;}
+.app-name span{color:#FFD54F;}
+.hero-sh{background:rgba(255,255,255,0.18);border:1.5px solid rgba(255,255,255,0.3);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px;}
+.hero-sh input{border:none;outline:none;background:transparent;color:#fff;font-size:14px;flex:1;width:100%;}
+.hero-sh input::placeholder{color:rgba(255,255,255,0.6);}
+.stats{display:flex;gap:8px;padding:10px 10px 0;flex-shrink:0;}
+.stat{flex:1;background:#fff;border-radius:12px;padding:10px 6px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.07);}
+.sn{font-size:20px;font-weight:900;color:#1565C0;}
+.sl{font-size:10px;color:#888;margin-top:2px;}
+.sec{padding:10px 10px 6px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sec-t{font-weight:800;font-size:13px;}
+.sec-c{font-size:11px;color:#888;background:#fff;padding:3px 10px;border-radius:20px;}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:4px 8px 20px;}
+.cc{background:#fff;border-radius:13px;padding:11px 6px 9px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.07);border:2px solid transparent;transition:transform .12s;}
+.cc:active{transform:scale(.95);}
+.cc-ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.cc-n{font-size:11px;font-weight:700;text-align:center;line-height:1.3;}
+.cc-b{font-size:10px;color:#888;background:#F5F5F5;border-radius:20px;padding:2px 7px;}
+.sbar{background:#fff;border-radius:12px;padding:9px 12px;margin:9px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.07);border:1.5px solid #E3E8F0;flex-shrink:0;}
+.sbar input{border:none;outline:none;flex:1;font-size:13px;background:transparent;width:100%;}
+.li{padding:0 10px 5px;font-size:11px;color:#888;flex-shrink:0;}
+.wc{background:#fff;border-radius:13px;padding:11px;margin:0 9px 8px;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.07);transition:transform .12s;position:relative;}
+.wc:active{transform:scale(.98);}
+.av{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0;overflow:hidden;}
+.av img{width:100%;height:100%;object-fit:cover;}
+.wn{font-size:14px;font-weight:800;}
+.wl{font-size:11px;color:#888;margin-top:2px;}
+.wp{font-size:11px;color:#2E7D32;margin-top:2px;font-weight:600;}
+.ws{font-size:11px;color:#FFB300;margin-top:2px;}
+.stag{position:absolute;top:8px;right:8px;background:#FFEBEE;color:#C62828;font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;}
+.rb{background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;border:none;border-radius:13px;padding:16px;font-size:15px;font-weight:800;cursor:pointer;margin:12px 9px 20px;width:calc(100% - 18px);box-shadow:0 4px 14px rgba(21,101,192,0.3);flex-shrink:0;display:block;}
+.empty{text-align:center;padding:40px 20px;}
+.ei{font-size:46px;margin-bottom:10px;}
+.et{font-weight:800;font-size:14px;color:#555;}
+.es{font-size:12px;color:#AAA;margin-top:4px;}
+.spinner-wrap{text-align:center;padding:40px;}
+.spinner{width:36px;height:36px;border:3px solid #E3E8F0;border-top:3px solid #1565C0;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.dc{background:#fff;border-radius:18px;margin:10px;padding:16px;box-shadow:0 2px 10px rgba(0,0,0,0.07);}
+.dav{width:86px;height:86px;border-radius:20px;margin:0 auto 12px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:34px;}
+.dav img{width:100%;height:100%;object-fit:cover;}
+.dn{font-size:19px;font-weight:900;text-align:center;}
+.dbg{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;}
+.dbw{text-align:center;margin:6px 0 10px;}
+.ar{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.an{font-size:24px;font-weight:900;color:#FFB300;}
+.as2{font-size:16px;color:#FFB300;}
+.ac2{font-size:11px;color:#888;}
+.ir{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F5F5F5;}
+.iri{width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.irl{font-size:10px;color:#888;}
+.irv{font-size:13px;font-weight:700;margin-top:1px;}
+.btn-g{background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:12px;}
+.btn-b{background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:8px;}
+.btn-r{background:#FFEBEE;color:#C62828;border:none;border-radius:12px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:8px;}
+.btn-s{background:linear-gradient(135deg,#FF6F00,#E65100);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:8px;}
+.rs{background:#fff;border-radius:13px;margin:0 10px 8px;padding:13px;box-shadow:0 2px 10px rgba(0,0,0,0.07);}
+.rt2{font-weight:800;font-size:13px;margin-bottom:8px;}
+.sr{display:flex;gap:8px;}
+.sb2{font-size:26px;cursor:pointer;background:none;border:none;padding:0;}
+.gc{background:#fff;border-radius:13px;margin:0 10px 10px;padding:13px;box-shadow:0 2px 10px rgba(0,0,0,0.07);}
+.gt{font-weight:800;font-size:13px;margin-bottom:10px;}
+.gg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.gi{aspect-ratio:1;border-radius:9px;background:#F5F5F5;display:flex;align-items:center;justify-content:center;font-size:20px;color:#CCC;overflow:hidden;}
+.gi img{width:100%;height:100%;object-fit:cover;}
+.gia{border:2px dashed #CCC;background:#FAFAFA;font-size:22px;cursor:pointer;}
+.cw{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+.cm{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.msg{max-width:78%;padding:9px 12px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;}
+.mme{background:linear-gradient(135deg,#1565C0,#1E88E5);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.mth{background:#fff;color:#1A1A2E;align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+.mt3{font-size:10px;opacity:.6;margin-top:3px;}
+.msender{font-size:10px;font-weight:700;opacity:.7;margin-bottom:2px;}
+.cb3{background:#fff;padding:9px 11px;display:flex;gap:8px;align-items:center;border-top:1px solid #F0F0F0;flex-shrink:0;}
+.ci{flex:1;border:1.5px solid #E3E8F0;border-radius:20px;padding:9px 13px;font-size:13px;outline:none;}
+.cs{background:linear-gradient(135deg,#1565C0,#0D47A1);border:none;color:#fff;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tabs{display:flex;border-bottom:2px solid #EEF2FF;margin:0 9px 9px;flex-shrink:0;}
+.tab{flex:1;padding:10px;font-size:12px;font-weight:800;border:none;background:transparent;cursor:pointer;color:#AAA;border-bottom:2px solid transparent;margin-bottom:-2px;}
+.tab.on{color:#1565C0;border-bottom-color:#1565C0;}
+.fsc{padding:0 9px 10px;overflow-y:auto;flex:1;}
+.fg{margin-bottom:10px;}
+.fl{font-size:11px;font-weight:700;color:#555;margin-bottom:4px;display:block;}
+.fi{width:100%;border-radius:10px;border:1.5px solid #E3E8F0;padding:10px 11px;font-size:13px;outline:none;background:#FAFAFA;}
+.fi:focus{border-color:#1565C0;background:#fff;}
+.fsel{width:100%;border-radius:10px;border:1.5px solid #E3E8F0;padding:10px 11px;font-size:13px;outline:none;background:#FAFAFA;color:#1A1A2E;}
+.errmsg{background:#FFEBEE;color:#C62828;border-radius:9px;padding:9px 12px;margin-bottom:10px;font-size:12px;text-align:center;font-weight:600;}
+.sbtn{background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:900;cursor:pointer;width:100%;margin-top:16px;display:block;box-shadow:0 4px 14px rgba(46,125,50,0.4);letter-spacing:0.5px;}
+.aup{display:flex;flex-direction:column;align-items:center;margin-bottom:12px;gap:6px;}
+.apr{width:74px;height:74px;border-radius:18px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;cursor:pointer;border:3px dashed #1565C0;}
+.apr img{width:100%;height:100%;object-fit:cover;}
+.ah2{font-size:11px;color:#888;}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.mo.show{display:flex;}
+.md{background:#fff;border-radius:18px;padding:18px;width:100%;max-width:360px;}
+.mt4{font-size:15px;font-weight:800;margin-bottom:10px;}
+.mb4{font-size:13px;color:#555;line-height:1.6;}
+.mbs{display:flex;gap:8px;margin-top:13px;}
+.mbtn{flex:1;padding:11px;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;}
+.mnk{background:#F5F5F5;color:#555;}
+.mok{background:linear-gradient(135deg,#C62828,#B71C1C);color:#fff;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#323232;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:2000;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.ssc{text-align:center;padding:50px 20px;}
+.si{font-size:56px;margin-bottom:12px;}
+.st2{font-size:18px;font-weight:900;color:#C62828;margin-bottom:8px;}
+.ss2{font-size:13px;color:#888;line-height:1.6;}
+/* شارة الزائر في الدردشة */
+.guest-badge{background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:7px 12px;margin:8px 10px;font-size:11px;color:#795548;text-align:center;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div id="s-home" class="screen active">
+  <div class="lb-bar" id="lb0"></div>
+  <div class="hero">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div>
+        <div class="app-name">Craft<span>oo</span></div>
+        <div style="font-size:12px;opacity:.85;margin-top:2px;" id="h-sub"></div>
+      </div>
+      <button id="home-login-btn" onclick="goLoginHome()" style="background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.5);color:#fff;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🔑 <span id="home-login-t">Se connecter</span></button>
+    </div>
+    <div class="hero-sh"><span>🔍</span><input id="inp-home" oninput="filterCrafts()"></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="sn">90</div><div class="sl" id="sl-crafts"></div></div>
+    <div class="stat"><div class="sn" id="sl-wnum">0</div><div class="sl" id="sl-workers"></div></div>
+    <div class="stat"><div class="sn">🌍</div><div class="sl" id="sl-country"></div></div>
+  </div>
+  <div class="sec"><span class="sec-t" id="sl-all"></span><span class="sec-c" id="sl-cnt"></span></div>
+  <div class="scroll"><div class="grid" id="grid"></div></div>
+</div>
+
+<div id="s-craft" class="screen">
+  <div class="lb-bar" id="lb1"></div>
+  <div class="hdr" id="chdr">
+    <button class="back" id="bk1"></button>
+    <div class="hdr-t" id="chdr-t"></div>
+  </div>
+  <div class="sbar"><span>🔍</span><input id="inp-craft" oninput="filterW()"></div>
+  <div class="li" id="w-cnt"></div>
+  <div class="scroll" id="w-list"></div>
+  <div style="padding:12px 9px 16px;flex-shrink:0;background:#F0F4F8;border-top:3px solid #1565C0;box-shadow:0 -6px 16px rgba(0,0,0,0.15);">
+    <button class="rb" id="reg-btn" style="margin:0;width:100%;padding:18px;font-size:16px;border-radius:16px;"></button>
+  </div>
+</div>
+
+<div id="s-worker" class="screen">
+  <div class="lb-bar" id="lb2"></div>
+  <div class="hdr">
+    <button class="back" id="bk2"></button>
+    <div class="hdr-t" id="wdet-t"></div>
+  </div>
+  <div class="scroll" id="wdet"></div>
+</div>
+
+<div id="s-chat" class="screen">
+  <div class="lb-bar" id="lb3"></div>
+  <div class="hdr" style="justify-content:space-between;">
+    <button class="back" id="bk3"></button>
+    <div class="hdr-t" id="chat-t"></div>
+    <button id="chat-rep-btn" onclick="chatReport()" style="background:rgba(198,40,40,0.2);border:1px solid rgba(198,40,40,0.5);color:#fff;border-radius:9px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;">🚨</button>
+  </div>
+  <div class="cw">
+    <div id="guest-info-bar"></div>
+    <div class="cm" id="chat-m"></div>
+    <div class="cb3">
+      <input class="ci" id="chat-in">
+      <button class="cs" id="chat-send">&#10148;</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-reg" class="screen">
+  <div class="lb-bar" id="lb4"></div>
+  <div class="hdr">
+    <button class="back" id="bk4"></button>
+    <div class="hdr-t" id="reg-t"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" id="t-reg"></button>
+    <button class="tab" id="t-log"></button>
+  </div>
+  <div id="f-reg" class="fsc">
+    <div id="e-reg"></div>
+    <div class="aup">
+      <div class="apr" id="apr">&#128247;</div>
+      <div class="ah2" id="av-hint"></div>
+      <input type="file" id="av-file" accept="image/*" style="display:none">
+    </div>
+    <div class="fg"><label class="fl" id="l-name"></label><input class="fi" id="r-name"></div>
+    <div class="fg"><label class="fl">Email *</label><input class="fi" id="r-email" type="email" placeholder="exemple@email.com"></div>
+    <div class="fg"><label class="fl" id="lbl-reg-pass"></label>
+      <div style="position:relative;">
+        <input class="fi" id="r-pass" type="password" style="padding-right:44px;">
+        <button type="button" onclick="togglePass('r-pass','eye1')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:0;" id="eye1">👁️</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl" id="l-conf"></label>
+      <div style="position:relative;">
+        <input class="fi" id="r-conf" type="password" style="padding-right:44px;">
+        <button type="button" onclick="togglePass('r-conf','eye2')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:0;" id="eye2">👁️</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl" id="l-pay"></label><select class="fsel" id="r-pay" onchange="updatePhonePrefix()"></select></div>
+    <div class="fg"><label class="fl" id="l-tel"></label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <div id="phone-prefix" style="background:#EEF2FF;border:1.5px solid #E3E8F0;border-radius:10px;padding:10px 11px;font-size:13px;font-weight:700;color:#1565C0;white-space:nowrap;flex-shrink:0;">+</div>
+        <input class="fi" id="r-tel" type="tel" placeholder="06XXXXXXXX" style="margin:0;">
+      </div>
+    </div>
+    <div class="fg"><label class="fl" id="l-vil"></label><input class="fi" id="r-vil"></div>
+    <div class="fg"><label class="fl" id="l-com"></label><input class="fi" id="r-com"></div>
+    <div class="fg"><label class="fl" id="l-met"></label><select class="fsel" id="r-met"></select></div>
+    <div class="fg"><label class="fl" id="l-gal"></label><div class="gg" id="gal-up"></div><input type="file" id="gal-file" accept="image/*" multiple style="display:none"></div>
+    <div class="sbtn-wrap">
+      <button class="sbtn" id="btn-reg"></button>
+    </div>
+  </div>
+  <div id="f-log" class="fsc" style="display:none">
+    <div id="e-log"></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" id="l-email" type="email" placeholder="exemple@email.com"></div>
+    <div class="fg"><label class="fl" id="lbl-pass2"></label>
+      <div style="position:relative;">
+        <input class="fi" id="l-pass" type="password" style="padding-right:44px;">
+        <button type="button" onclick="togglePass('l-pass','eye3')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:0;" id="eye3">👁️</button>
+      </div>
+    </div>
+    <div class="sbtn-wrap">
+      <button class="sbtn" id="btn-log"></button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Modal -->
+<div class="mo" id="modal">
+  <div class="md">
+    <div class="mt4" id="m-t"></div>
+    <div class="mb4" id="m-b"></div>
+    <div class="mbs">
+      <button class="mbtn mnk" id="m-nk"></button>
+      <button class="mbtn mok" id="m-ok"></button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// FIREBASE CONFIG
+// ═══════════════════════════════════════
+var firebaseConfig = {
+  apiKey: "AIzaSyCdDLq6GMRCLhYegXdb6d89SA6utQZWsMw",
+  authDomain: "crafoo-e5722.firebaseapp.com",
+  projectId: "crafoo-e5722",
+  storageBucket: "crafoo-e5722.firebasestorage.app",
+  messagingSenderId: "397054443206",
+  appId: "1:397054443206:web:cc1f30b9e3361c18cc61c7"
+};
+firebase.initializeApp(firebaseConfig);
+var DB = firebase.firestore();
+var AUTH = firebase.auth();
+
+// ═══════════════════════════════════════
+// TRANSLATIONS
+// ═══════════════════════════════════════
+var T={
+fr:{sub:"Trouvez le meilleur artisan",sh:"Rechercher un metier...",sc:"Metiers",sw:"Artisans",sy:"Mondial",sa:"Tous les Metiers",art:"artisans",av:"disponibles",bk:"Retour",sw2:"Nom ou ville...",rb:"+ S inscrire comme artisan",nw:"Aucun artisan inscrit",ns:"Soyez le premier!",wt:"Fiche Artisan",ph:"Telephone",co:"Commune",ci:"Ville",cy:"Pays",ca:"Appeler",cb:"Message",cg:"Galerie Photos",rt:"Inscription",tr2:"S inscrire",tl:"Se connecter",ln:"Nom complet *",lp:"Mot de passe *",lc:"Confirmer *",lt:"Telephone *",lpa:"Pays *",lv:"Ville",lco:"Commune",lm:"Votre metier *",lg:"Photos travaux",cp:"Choisir un metier",cpay:"Choisir un pays",br2:"S inscrire",bl:"Se connecter",ef:"Remplir tous les champs",ep:"Mots de passe differents",ee:"Email deja utilise",en2:"Email introuvable",ex:"Remplir les champs",ah:"Appuyez pour ajouter photo",rat:"Evaluer",rep:"Signaler",sup:"Soutenir",rep_chat:"Signaler ce artisan",rpt:"Signalement",rpb:"Confirmer le signalement?",rok:"Confirmer",rnk:"Annuler",st:"Artisan suspendu",sm:"Suspendu 5 jours.",cph:"Votre message...",ok:"Enregistre!",send:"Envoi...",dir:"ltr",guest:"Visiteur anonyme"},
+ar:{sub:"ابحث عن أفضل الحرفيين",sh:"ابحث عن حرفة...",sc:"حرفة",sw:"حرفي",sy:"عالمي",sa:"جميع الحرف",art:"حرفي",av:"متاح",bk:"رجوع",sw2:"اسم او مدينة...",rb:"سجل نفسك حرفيا",nw:"لا يوجد حرفيون",ns:"كن اول من يسجل!",wt:"بطاقة الحرفي",ph:"الهاتف",co:"الحي",ci:"المدينة",cy:"البلد",ca:"اتصل الآن",cb:"مراسلة",cg:"معرض الصور",rt:"التسجيل",tr2:"تسجيل",tl:"دخول",ln:"الاسم الكامل *",lp:"كلمة المرور *",lc:"تاكيد *",lt:"الهاتف *",lpa:"البلد *",lv:"المدينة",lco:"الحي",lm:"حرفتك *",lg:"صور الاعمال",cp:"اختر الحرفة",cpay:"اختر البلد",br2:"تسجيل",bl:"دخول",ef:"يرجى ملء الحقول",ep:"كلمتا المرور مختلفتان",ee:"البريد مسجل مسبقا",en2:"البريد غير موجود",ex:"يرجى ملء الحقول",ah:"اضغط لاضافة صورة",rat:"تقييم",rep:"تبليغ",sup:"دعم",rep_chat:"الإبلاغ عن الحرفي",rpt:"تبليغ",rpb:"هل تريد التبليغ؟",rok:"تاكيد",rnk:"الغاء",st:"الحرفي موقوف",sm:"موقوف 5 يوما.",cph:"رسالتك...",ok:"تم!",send:"جار الارسال...",dir:"rtl",guest:"زائر مجهول"},
+en:{sub:"Find the best craftsmen near you",sh:"Search for a craft...",sc:"Crafts",sw:"Craftsmen",sy:"Worldwide",sa:"All Crafts",art:"craftsmen",av:"available",bk:"Back",sw2:"Name or city...",rb:"+ Register as Craftsman",nw:"No craftsmen registered",ns:"Be the first!",wt:"Craftsman Profile",ph:"Phone",co:"District",ci:"City",cy:"Country",ca:"Call Now",cb:"Message",cg:"Photo Gallery",rt:"Registration",tr2:"Register",tl:"Login",ln:"Full Name *",lp:"Password *",lc:"Confirm *",lt:"Phone *",lpa:"Country *",lv:"City",lco:"District",lm:"Your Craft *",lg:"Work Photos",cp:"Select a craft",cpay:"Select a country",br2:"Register",bl:"Login",ef:"Fill all required fields",ep:"Passwords do not match",ee:"Email already used",en2:"Email not found",ex:"Fill all fields",ah:"Tap to add photo",rat:"Rate",rep:"Report",sup:"Support",rep_chat:"Report this craftsman",rpt:"Report",rpb:"Report this craftsman?",rok:"Confirm",rnk:"Cancel",st:"Craftsman Suspended",sm:"Suspended 5 days.",cph:"Your message...",ok:"Saved!",send:"Sending...",dir:"ltr",guest:"Anonymous visitor"},
+es:{sub:"Encuentra al mejor artesano",sh:"Buscar un oficio...",sc:"Oficios",sw:"Artesanos",sy:"Mundial",sa:"Todos los Oficios",art:"artesanos",av:"disponibles",bk:"Volver",sw2:"Nombre o ciudad...",rb:"Registrarse",nw:"Sin artesanos",ns:"Se el primero!",wt:"Perfil Artesano",ph:"Telefono",co:"Barrio",ci:"Ciudad",cy:"Pais",ca:"Llamar",cb:"Mensaje",cg:"Galeria",rt:"Registro",tr2:"Registrarse",tl:"Iniciar sesion",ln:"Nombre *",lp:"Contrasena *",lc:"Confirmar *",lt:"Telefono *",lpa:"Pais *",lv:"Ciudad",lco:"Barrio",lm:"Tu oficio *",lg:"Fotos",cp:"Seleccionar oficio",cpay:"Seleccionar pais",br2:"Registrarse",bl:"Iniciar",ef:"Rellenar campos",ep:"Contrasenas no coinciden",ee:"Email ya usado",en2:"Email no encontrado",ex:"Rellenar campos",ah:"Toca para foto",rat:"Valorar",rep:"Reportar",sup:"Apoyar",rep_chat:"Reportar artesano",rpt:"Reporte",rpb:"Reportar artesano?",rok:"Confirmar",rnk:"Cancelar",st:"Suspendido",sm:"Suspendido 5 dias.",cph:"Tu mensaje...",ok:"Guardado!",send:"Enviando...",dir:"ltr",guest:"Visitante anonimo"},
+it:{sub:"Trova il miglior artigiano",sh:"Cerca un mestiere...",sc:"Mestieri",sw:"Artigiani",sy:"Mondiale",sa:"Tutti i Mestieri",art:"artigiani",av:"disponibili",bk:"Indietro",sw2:"Nome o citta...",rb:"Registrati",nw:"Nessun artigiano",ns:"Sii il primo!",wt:"Profilo Artigiano",ph:"Telefono",co:"Quartiere",ci:"Citta",cy:"Paese",ca:"Chiama",cb:"Messaggio",cg:"Galleria",rt:"Registrazione",tr2:"Registrati",tl:"Accedi",ln:"Nome *",lp:"Password *",lc:"Conferma *",lt:"Telefono *",lpa:"Paese *",lv:"Citta",lco:"Quartiere",lm:"Mestiere *",lg:"Foto lavori",cp:"Seleziona mestiere",cpay:"Seleziona paese",br2:"Registrati",bl:"Accedi",ef:"Compila i campi",ep:"Password diverse",ee:"Email usata",en2:"Email non trovata",ex:"Compila i campi",ah:"Tocca per foto",rat:"Valuta",rep:"Segnala",sup:"Supporta",rep_chat:"Segnala artigiano",rpt:"Segnalazione",rpb:"Segnalare?",rok:"Conferma",rnk:"Annulla",st:"Sospeso",sm:"Sospeso 5 giorni.",cph:"Messaggio...",ok:"Salvato!",send:"Invio...",dir:"ltr",guest:"Visitatore anonimo"},
+tr:{sub:"Yakinindaki en iyi ustayi bul",sh:"Meslek ara...",sc:"Meslekler",sw:"Ustalar",sy:"Dunya",sa:"Tum Meslekler",art:"usta",av:"mevcut",bk:"Geri",sw2:"Isim veya sehir...",rb:"Usta olarak kaydol",nw:"Kayitli usta yok",ns:"Ilk sen ol!",wt:"Usta Profili",ph:"Telefon",co:"Mahalle",ci:"Sehir",cy:"Ulke",ca:"Ara",cb:"Mesaj",cg:"Galeri",rt:"Kayit",tr2:"Kaydol",tl:"Giris",ln:"Tam ad *",lp:"Sifre *",lc:"Onayla *",lt:"Telefon *",lpa:"Ulke *",lv:"Sehir",lco:"Mahalle",lm:"Meslegin *",lg:"Is fotograflari",cp:"Meslek sec",cpay:"Ulke sec",br2:"Kaydol",bl:"Giris",ef:"Tum alanlari doldur",ep:"Sifreler uyusmuyor",ee:"Email kullanimda",en2:"Email bulunamadi",ex:"Alanlari doldur",ah:"Fotograf ekle",rat:"Degerlendir",rep:"Sikayet",sup:"Destekle",rep_chat:"Sikayet et",rpt:"Sikayet",rpb:"Sikayet etmek istiyor musun?",rok:"Onayla",rnk:"Iptal",st:"Askiya alindi",sm:"5 gun askiya alindi.",cph:"Mesajin...",ok:"Kaydedildi!",send:"Gonderiliyor...",dir:"ltr",guest:"Anonim ziyaretci"},
+nl:{sub:"Vind de beste vakman bij jou",sh:"Zoek een vak...",sc:"Vakken",sw:"Vaklieden",sy:"Wereldwijd",sa:"Alle Vakken",art:"vaklieden",av:"beschikbaar",bk:"Terug",sw2:"Naam of stad...",rb:"Registreer als vakman",nw:"Geen vaklieden",ns:"Wees de eerste!",wt:"Vakman Profiel",ph:"Telefoon",co:"Wijk",ci:"Stad",cy:"Land",ca:"Bellen",cb:"Bericht",cg:"Fotogalerij",rt:"Registratie",tr2:"Registreren",tl:"Inloggen",ln:"Naam *",lp:"Wachtwoord *",lc:"Bevestig *",lt:"Telefoon *",lpa:"Land *",lv:"Stad",lco:"Wijk",lm:"Jouw vak *",lg:"Werkfotos",cp:"Kies een vak",cpay:"Kies een land",br2:"Registreren",bl:"Inloggen",ef:"Vul alle velden in",ep:"Wachtwoorden komen niet overeen",ee:"Email al in gebruik",en2:"Email niet gevonden",ex:"Vul de velden in",ah:"Tik om foto toe te voegen",rat:"Beoordeel",rep:"Melden",sup:"Steunen",rep_chat:"Meld vakman",rpt:"Melding",rpb:"Wil je melden?",rok:"Bevestigen",rnk:"Annuleren",st:"Geschorst",sm:"5 dagen geschorst.",cph:"Bericht...",ok:"Opgeslagen!",send:"Verzenden...",dir:"ltr",guest:"Anonieme bezoeker"},
+zh:{sub:"在您附近找到最好的工匠",sh:"搜索职业...",sc:"职业",sw:"工匠",sy:"全球",sa:"所有职业",art:"工匠",av:"可用",bk:"返回",sw2:"姓名或城市...",rb:"注册为工匠",nw:"暂无工匠",ns:"成为第一个",wt:"工匠资料",ph:"电话",co:"街区",ci:"城市",cy:"国家",ca:"致电",cb:"消息",cg:"图片库",rt:"注册",tr2:"注册",tl:"登录",ln:"全名 *",lp:"密码 *",lc:"确认 *",lt:"电话 *",lpa:"国家 *",lv:"城市",lco:"街区",lm:"职业 *",lg:"工作照片",cp:"选择职业",cpay:"选择国家",br2:"注册",bl:"登录",ef:"填写所有字段",ep:"密码不匹配",ee:"邮箱已使用",en2:"未找到邮箱",ex:"填写字段",ah:"点击添加照片",rat:"评价",rep:"举报",sup:"支持",rep_chat:"举报工匠",rpt:"举报",rpb:"举报此工匠？",rok:"确认",rnk:"取消",st:"已暂停",sm:"暂停5天。",cph:"消息...",ok:"已保存",send:"发送中...",dir:"ltr",guest:"匿名访客"},
+hi:{sub:"अपने पास का सबसे अच्छा कारीगर खोजें",sh:"पेशा खोजें...",sc:"पेशे",sw:"कारीगर",sy:"विश्वव्यापी",sa:"सभी पेशे",art:"कारीगर",av:"उपलब्ध",bk:"वापस",sw2:"नाम या शहर...",rb:"कारीगर के रूप में पंजीकरण",nw:"कोई कारीगर नहीं",ns:"पहले बनें!",wt:"कारीगर प्रोफाइल",ph:"फोन",co:"मोहल्ला",ci:"शहर",cy:"देश",ca:"कॉल करें",cb:"संदेश",cg:"गैलरी",rt:"पंजीकरण",tr2:"पंजीकरण",tl:"लॉगिन",ln:"पूरा नाम *",lp:"पासवर्ड *",lc:"पुष्टि *",lt:"फोन *",lpa:"देश *",lv:"शहर",lco:"मोहल्ला",lm:"पेशा *",lg:"काम की तस्वीरें",cp:"पेशा चुनें",cpay:"देश चुनें",br2:"पंजीकरण",bl:"लॉगिन",ef:"सभी फील्ड भरें",ep:"पासवर्ड मेल नहीं",ee:"ईमेल उपयोग में",en2:"ईमेल नहीं मिला",ex:"फील्ड भरें",ah:"फोटो जोड़ें",rat:"रेट करें",rep:"रिपोर्ट",sup:"समर्थन",rep_chat:"रिपोर्ट करें",rpt:"रिपोर्ट",rpb:"रिपोर्ट करें?",rok:"पुष्टि",rnk:"रद्द",st:"निलंबित",sm:"5 दिन निलंबित।",cph:"संदेश...",ok:"सहेजा!",send:"भेज रहे हैं...",dir:"ltr",guest:"अज्ञात आगंतुक"},
+de:{sub:"Finden Sie den besten Handwerker in Ihrer Nahe",sh:"Beruf suchen...",sc:"Berufe",sw:"Handwerker",sy:"Weltweit",sa:"Alle Berufe",art:"Handwerker",av:"verfugbar",bk:"Zuruck",sw2:"Name oder Stadt...",rb:"Als Handwerker registrieren",nw:"Keine Handwerker registriert",ns:"Sei der Erste!",wt:"Handwerkerprofil",ph:"Telefon",co:"Bezirk",ci:"Stadt",cy:"Land",ca:"Anrufen",cb:"Nachricht",cg:"Fotogalerie",rt:"Registrierung",tr2:"Registrieren",tl:"Anmelden",ln:"Vollstandiger Name *",lp:"Passwort *",lc:"Bestatigen *",lt:"Telefon *",lpa:"Land *",lv:"Stadt",lco:"Bezirk",lm:"Ihr Beruf *",lg:"Arbeitsfotos",cp:"Beruf wahlen",cpay:"Land wahlen",br2:"Registrieren",bl:"Anmelden",ef:"Alle Felder ausfullen",ep:"Passworter stimmen nicht uberein",ee:"Email bereits verwendet",en2:"Email nicht gefunden",ex:"Felder ausfullen",ah:"Foto hinzufugen",rat:"Bewerten",rep:"Melden",sup:"Unterstutzen",rep_chat:"Handwerker melden",rpt:"Meldung",rpb:"Diesen Handwerker melden?",rok:"Bestatigen",rnk:"Abbrechen",st:"Handwerker gesperrt",sm:"5 Tage gesperrt.",cph:"Ihre Nachricht...",ok:"Gespeichert!",send:"Senden...",dir:"ltr",guest:"Anonymer Besucher"},
+pt:{sub:"Encontre o melhor artesao perto de voce",sh:"Pesquisar uma profissao...",sc:"Profissoes",sw:"Artesaos",sy:"Mundial",sa:"Todas as Profissoes",art:"artesaos",av:"disponiveis",bk:"Voltar",sw2:"Nome ou cidade...",rb:"Registrar como artesao",nw:"Nenhum artesao registrado",ns:"Seja o primeiro!",wt:"Perfil do Artesao",ph:"Telefone",co:"Bairro",ci:"Cidade",cy:"Pais",ca:"Ligar",cb:"Mensagem",cg:"Galeria de Fotos",rt:"Registro",tr2:"Registrar",tl:"Entrar",ln:"Nome completo *",lp:"Senha *",lc:"Confirmar *",lt:"Telefone *",lpa:"Pais *",lv:"Cidade",lco:"Bairro",lm:"Sua profissao *",lg:"Fotos de trabalho",cp:"Escolher profissao",cpay:"Escolher pais",br2:"Registrar",bl:"Entrar",ef:"Preencher todos os campos",ep:"Senhas nao coincidem",ee:"Email ja utilizado",en2:"Email nao encontrado",ex:"Preencher os campos",ah:"Toque para adicionar foto",rat:"Avaliar",rep:"Denunciar",sup:"Apoiar",rep_chat:"Denunciar artesao",rpt:"Denuncia",rpb:"Denunciar este artesao?",rok:"Confirmar",rnk:"Cancelar",st:"Artesao suspenso",sm:"Suspenso por 5 dias.",cph:"Sua mensagem...",ok:"Salvo!",send:"Enviando...",dir:"ltr",guest:"Visitante anonimo"}
+};
+
+var COUNTRIES=["Afghanistan","Afrique du Sud","Albanie","Algerie","Allemagne","Andorre","Angola","Arabie Saoudite","Argentine","Armenie","Australie","Autriche","Azerbaidjan","Bahamas","Bahrein","Bangladesh","Belgique","Benin","Bielorussie","Birmanie","Bolivie","Bosnie","Botswana","Bresil","Brunei","Bulgarie","Burkina Faso","Burundi","Cambodge","Cameroun","Canada","Cap-Vert","Centrafrique","Chili","Chine","Chypre","Colombie","Comores","Congo","Coree du Nord","Coree du Sud","Costa Rica","Cote d Ivoire","Croatie","Cuba","Danemark","Djibouti","Egypte","Emirats arabes unis","Equateur","Espagne","Estonie","Etats-Unis","Ethiopie","Fidji","Finlande","France","Gabon","Gambie","Georgie","Ghana","Grece","Guatemala","Guinee","Guyana","Haiti","Honduras","Hongrie","Inde","Indonesie","Irak","Iran","Irlande","Islande","Israel","Italie","Jamaique","Japon","Jordanie","Kazakhstan","Kenya","Koweit","Laos","Lettonie","Liban","Liberia","Libye","Lituanie","Luxembourg","Madagascar","Malaisie","Malawi","Mali","Malte","Maroc","Maurice","Mauritanie","Mexique","Moldavie","Monaco","Mongolie","Montenegre","Mozambique","Namibie","Nepal","Nicaragua","Niger","Nigeria","Norvege","Nouvelle-Zelande","Oman","Ouganda","Ouzbekistan","Pakistan","Palestine","Panama","Paraguay","Pays-Bas","Perou","Philippines","Pologne","Portugal","Qatar","Roumanie","Royaume-Uni","Russie","Rwanda","Salvador","Senegal","Serbie","Sierra Leone","Singapour","Slovaquie","Slovenie","Somalie","Soudan","Sri Lanka","Suede","Suisse","Syrie","Tanzanie","Tchad","Tcheque","Thailande","Togo","Tunisie","Turquie","Ukraine","Uruguay","Venezuela","Vietnam","Yemen","Zambie","Zimbabwe"];
+
+var CRAFTS=[
+{id:1,fr:"Plomberie",ar:"سباكة",en:"Plumbing",es:"Fontaneria",it:"Idraulica",tr:"Tesisat",nl:"Loodgieterij",zh:"水管工",hi:"प्लंबिंग",de:"Klempner",pt:"Encanamento",icon:"🔧",c:"#1565C0",bg:"#E3F2FD"},
+{id:2,fr:"Electricite Batiment",ar:"كهرباء منازل",en:"Electrician",es:"Electricidad",it:"Elettricita",tr:"Elektrik",nl:"Elektriciteit",zh:"电工",hi:"इलेक्ट्रीशियन",de:"Elektriker",pt:"Eletricista",icon:"⚡",c:"#F57C00",bg:"#FFF3E0"},
+{id:3,fr:"Peinture",ar:"دهان",en:"Painting",es:"Pintura",it:"Pittura",tr:"Boyacilik",nl:"Schilder",zh:"油漆",hi:"पेंटिंग",de:"Maler",pt:"Pintura",icon:"🎨",c:"#6A1B9A",bg:"#F3E5F5"},
+{id:4,fr:"Maconnerie",ar:"بناء",en:"Masonry",es:"Albanileria",it:"Muratura",tr:"Duvarcilik",nl:"Metselwerk",zh:"砌砖",hi:"राजमिस्त्री",de:"Maurer",pt:"Alvenaria",icon:"🧱",c:"#455A64",bg:"#ECEFF1"},
+{id:5,fr:"Menuiserie Bois",ar:"نجارة خشب",en:"Carpentry",es:"Carpinteria",it:"Falegnameria",tr:"Marangozluk",nl:"Timmerwerk",zh:"木工",hi:"बढ़ईगीरी",de:"Zimmerei",pt:"Carpintaria",icon:"🪵",c:"#4E342E",bg:"#EFEBE9"},
+{id:6,fr:"Menuiserie Aluminium",ar:"الومنيوم",en:"Aluminum",es:"Aluminio",it:"Alluminio",tr:"Aluminyum",nl:"Aluminium",zh:"铝制品",hi:"एल्युमीनियम",de:"Aluminium",pt:"Aluminio",icon:"🪟",c:"#546E7A",bg:"#F5F5F5"},
+{id:7,fr:"Ferronnerie",ar:"حدادة",en:"Blacksmithing",es:"Herreria",it:"Ferronneria",tr:"Demircilik",nl:"Smeedwerk",zh:"铁艺",hi:"लोहारी",de:"Schmiedekunst",pt:"Ferraria",icon:"⚙️",c:"#37474F",bg:"#ECEFF1"},
+{id:8,fr:"Carrelage",ar:"تبليط",en:"Tiling",es:"Azulejos",it:"Piastrellatura",tr:"Fayanscilik",nl:"Tegelwerk",zh:"瓷砖",hi:"टाइलिंग",de:"Fliesenleger",pt:"Azulejista",icon:"🏗️",c:"#00838F",bg:"#E0F7FA"},
+{id:9,fr:"Climatisation",ar:"تكييف",en:"Air Conditioning",es:"Aire Acondicionado",it:"Climatizzazione",tr:"Klima",nl:"Airco",zh:"空调",hi:"एयर कंडीशनिंग",de:"Klimaanlage",pt:"Ar Condicionado",icon:"❄️",c:"#0277BD",bg:"#E1F5FE"},
+{id:10,fr:"Froid Industriel",ar:"تبريد صناعي",en:"Industrial Refrigeration",es:"Refrigeracion",it:"Refrigerazione",tr:"Sogutma",nl:"Koeling",zh:"工业制冷",hi:"प्रशीतन",de:"Industriekuhlang",pt:"Refrigeracao",icon:"🧊",c:"#00ACC1",bg:"#E0F7FA"},
+{id:11,fr:"Soudure",ar:"لحام",en:"Welding",es:"Soldadura",it:"Saldatura",tr:"Kaynak",nl:"Lassen",zh:"焊接",hi:"वेल्डिंग",de:"Schweissen",pt:"Soldagem",icon:"🔥",c:"#D84315",bg:"#FBE9E7"},
+{id:12,fr:"Etancheite",ar:"عزل مائي",en:"Waterproofing",es:"Impermeabilizacion",it:"Impermeabilizzazione",tr:"Su Yalitimi",nl:"Waterdichting",zh:"防水",hi:"वॉटरप्रूफिंग",de:"Abdichtung",pt:"Impermeabilizacao",icon:"💧",c:"#0288D1",bg:"#E1F5FE"},
+{id:13,fr:"Coffrage",ar:"قوالب بناء",en:"Formwork",es:"Encofrado",it:"Cassaforma",tr:"Kalipcilik",nl:"Bekisting",zh:"模板",hi:"फॉर्मवर्क",de:"Schalung",pt:"Cimbramento",icon:"🏛️",c:"#5D4037",bg:"#EFEBE9"},
+{id:14,fr:"Faux Plafonds",ar:"اسقف مستعارة",en:"False Ceilings",es:"Falsos Techos",it:"Controsoffitti",tr:"Asma Tavan",nl:"Verlaagd Plafond",zh:"吊顶",hi:"झूठी छत",de:"Abhangedecke",pt:"Forro",icon:"🏢",c:"#4527A0",bg:"#EDE7F6"},
+{id:15,fr:"Energie Solaire",ar:"طاقة شمسية",en:"Solar Energy",es:"Energia Solar",it:"Energia Solare",tr:"Gunes Enerjisi",nl:"Zonne-energie",zh:"太阳能",hi:"सौर ऊर्जा",de:"Solarenergie",pt:"Energia Solar",icon:"☀️",c:"#F9A825",bg:"#FFFDE7"},
+{id:16,fr:"Cameras Alarmes",ar:"كاميرات مراقبة",en:"CCTV Alarms",es:"Camaras",it:"Telecamere",tr:"Kamera",nl:"Cameras",zh:"监控",hi:"सीसीटीवी",de:"Kameras",pt:"Cameras",icon:"📹",c:"#1A237E",bg:"#E8EAF6"},
+{id:17,fr:"Installation Parabole",ar:"تركيب دش",en:"Satellite Dish",es:"Parabolica",it:"Parabola",tr:"Uydu Anteni",nl:"Schotelantenne",zh:"卫星天线",hi:"सैटेलाइट डिश",de:"Satellitenantenne",pt:"Antena Parabolica",icon:"📡",c:"#283593",bg:"#E8EAF6"},
+{id:18,fr:"Maintenance Ascenseur",ar:"صيانة مصعد",en:"Elevator Maintenance",es:"Ascensor",it:"Ascensore",tr:"Asansor",nl:"Lift",zh:"电梯",hi:"लिफ्ट",de:"Aufzugwartung",pt:"Manutencao Elevador",icon:"🛗",c:"#1B5E20",bg:"#E8F5E9"},
+{id:19,fr:"Mecanique Auto",ar:"ميكانيك سيارات",en:"Auto Mechanic",es:"Mecanica",it:"Meccanica",tr:"Tamirci",nl:"Automonteur",zh:"汽车修理",hi:"मैकेनिक",de:"Automechaniker",pt:"Mecanico Auto",icon:"🚗",c:"#BF360C",bg:"#FBE9E7"},
+{id:20,fr:"Scanner Auto",ar:"سكانر سيارات",en:"Auto Diagnostics",es:"Diagnostico",it:"Diagnostica",tr:"Arac Diagnostigi",nl:"Auto Diagnose",zh:"汽车诊断",hi:"ऑटो स्कैनर",de:"Auto Diagnose",pt:"Diagnostico Auto",icon:"🔬",c:"#E65100",bg:"#FBE9E7"},
+{id:21,fr:"Tolerie",ar:"تشكيل معادن",en:"Sheet Metal",es:"Chapa",it:"Lattoneria",tr:"Sac Isleri",nl:"Plaatwerk",zh:"钣金",hi:"शीट मेटल",de:"Blecharbeit",pt:"Funilaria",icon:"🔨",c:"#546E7A",bg:"#ECEFF1"},
+{id:22,fr:"Carrosserie Peinture",ar:"هيكل سيارات",en:"Auto Body",es:"Carroceria",it:"Carrozzeria",tr:"Kaporta",nl:"Carrosserie",zh:"汽车车身",hi:"कार बॉडी",de:"Karosserie",pt:"Carrocaria",icon:"🚘",c:"#D84315",bg:"#FBE9E7"},
+{id:23,fr:"Vitrerie Redressement",ar:"زجاج وتقويم",en:"Glazing",es:"Cristaleria",it:"Vetreria",tr:"Cam Isleri",nl:"Glaswerk",zh:"玻璃",hi:"कांच",de:"Glaserei",pt:"Vidraria",icon:"🪞",c:"#0097A7",bg:"#E0F7FA"},
+{id:24,fr:"Reparation Pneumatique",ar:"اصلاح اطارات",en:"Tire Repair",es:"Neumaticos",it:"Pneumatici",tr:"Lastik",nl:"Banden",zh:"轮胎",hi:"टायर",de:"Reifenreparatur",pt:"Pneus",icon:"🛞",c:"#37474F",bg:"#ECEFF1"},
+{id:25,fr:"Lavage Automobile",ar:"غسيل سيارات",en:"Car Wash",es:"Lavado Auto",it:"Autolavaggio",tr:"Arac Yikama",nl:"Autowassen",zh:"洗车",hi:"कार धुलाई",de:"Autowaschen",pt:"Lavagem Auto",icon:"🚿",c:"#0277BD",bg:"#E1F5FE"},
+{id:26,fr:"Electricite Auto",ar:"كهرباء سيارات",en:"Auto Electrician",es:"Electrico Auto",it:"Elettricita Auto",tr:"Oto Elektrik",nl:"Auto Elektra",zh:"汽车电工",hi:"ऑटो इलेक्ट्रिक",de:"Auto Elektriker",pt:"Eletricista Auto",icon:"🔋",c:"#F57F17",bg:"#FFFDE7"},
+{id:27,fr:"Depannage Domicile",ar:"اصلاح منزلي",en:"Home Repair",es:"Reparaciones",it:"Riparazioni",tr:"Ev Tamiri",nl:"Thuisreparatie",zh:"家居维修",hi:"घर की मरम्मत",de:"Hausreparatur",pt:"Reparos em Casa",icon:"🛠️",c:"#558B2F",bg:"#F1F8E9"},
+{id:28,fr:"Reparation Electromenager",ar:"اصلاح اجهزة",en:"Appliance Repair",es:"Electrodomesticos",it:"Elettrodomestici",tr:"Beyaz Esya",nl:"Huishoudapparaten",zh:"家电维修",hi:"उपकरण मरम्मत",de:"Geratereparatur",pt:"Reparacao Eletrodomestico",icon:"📺",c:"#BF360C",bg:"#FBE9E7"},
+{id:29,fr:"Reparation Smartphone",ar:"اصلاح هواتف",en:"Phone Repair",es:"Moviles",it:"Smartphone",tr:"Telefon",nl:"Telefoon",zh:"手机维修",hi:"फोन",de:"Handy Reparatur",pt:"Reparacao Celular",icon:"📱",c:"#00695C",bg:"#E0F2F1"},
+{id:30,fr:"Reparation Ordinateur",ar:"اصلاح حاسوب",en:"Computer Repair",es:"Ordenadores",it:"Computer",tr:"Bilgisayar",nl:"Computer",zh:"电脑",hi:"कंप्यूटर",de:"Computer Reparatur",pt:"Reparacao Computador",icon:"💻",c:"#283593",bg:"#E8EAF6"},
+{id:31,fr:"Installation Reseau",ar:"تركيب شبكات",en:"Network",es:"Redes",it:"Rete",tr:"Ag",nl:"Netwerk",zh:"网络",hi:"नेटवर्क",de:"Netzwerk",pt:"Rede",icon:"🌐",c:"#1565C0",bg:"#E3F2FD"},
+{id:32,fr:"Coiffure Homme",ar:"حلاقة رجال",en:"Men Barber",es:"Peluqueria Hombre",it:"Barbiere",tr:"Erkek Berberi",nl:"Herenkapper",zh:"男士理发",hi:"पुरुष नाई",de:"Herrenfriseur",pt:"Barbearia",icon:"💈",c:"#C62828",bg:"#FFEBEE"},
+{id:33,fr:"Coiffure Femme",ar:"حلاقة نساء",en:"Women Hair",es:"Peluqueria Mujer",it:"Parrucchiera",tr:"Kadin Berberi",nl:"Dameskapper",zh:"女士美发",hi:"महिला नाई",de:"Damenfriseur",pt:"Cabeleireiro Feminino",icon:"✂️",c:"#AD1457",bg:"#FCE4EC"},
+{id:34,fr:"Esthetique Beaute",ar:"تجميل",en:"Beauty",es:"Estetica",it:"Estetica",tr:"Estetik",nl:"Schoonheid",zh:"美容",hi:"सौंदर्य",de:"Kosmetik",pt:"Estetica",icon:"💄",c:"#E91E63",bg:"#FCE4EC"},
+{id:35,fr:"Massage Bien-etre",ar:"مساج",en:"Massage",es:"Masaje",it:"Massaggio",tr:"Masaj",nl:"Massage",zh:"按摩",hi:"मसाज",de:"Massage",pt:"Massagem",icon:"💆",c:"#00796B",bg:"#E0F2F1"},
+{id:36,fr:"Soins Infirmiers",ar:"تمريض",en:"Nursing",es:"Enfermeria",it:"Infermieristica",tr:"Hemsirelik",nl:"Verpleging",zh:"护理",hi:"नर्सिंग",de:"Krankenpflege",pt:"Enfermagem",icon:"🩺",c:"#2E7D32",bg:"#E8F5E9"},
+{id:37,fr:"Docteur Veterinaire",ar:"طبيب بيطري",en:"Veterinarian",es:"Veterinario",it:"Veterinario",tr:"Veteriner",nl:"Dierenarts",zh:"兽医",hi:"पशु चिकित्सक",de:"Tierarzt",pt:"Veterinario",icon:"🐾",c:"#558B2F",bg:"#F1F8E9"},
+{id:38,fr:"Avocat",ar:"محامي",en:"Lawyer",es:"Abogado",it:"Avvocato",tr:"Avukat",nl:"Advocaat",zh:"律师",hi:"वकील",de:"Rechtsanwalt",pt:"Advogado",icon:"⚖️",c:"#4A148C",bg:"#EDE7F6"},
+{id:39,fr:"Couture",ar:"خياطة",en:"Tailoring",es:"Costura",it:"Sartoria",tr:"Terzilik",nl:"Kleermakerij",zh:"裁缝",hi:"दर्जी",de:"Schneiderei",pt:"Costura",icon:"🧵",c:"#880E4F",bg:"#FCE4EC"},
+{id:40,fr:"Tapisserie",ar:"تنجيد",en:"Upholstery",es:"Tapiceria",it:"Tappezzeria",tr:"Dosemecilik",nl:"Bekleding",zh:"室内装潢",hi:"असबाब",de:"Polsterei",pt:"Tapeçaria",icon:"🛋️",c:"#6D4C41",bg:"#EFEBE9"},
+{id:41,fr:"Nettoyage Canape",ar:"تنظيف كنب",en:"Sofa Cleaning",es:"Sofas",it:"Divani",tr:"Kanepe",nl:"Bank",zh:"沙发清洁",hi:"सोफा सफाई",de:"Sofareinigung",pt:"Limpeza de Sofa",icon:"🧽",c:"#00695C",bg:"#E0F2F1"},
+{id:42,fr:"Nettoyage Tapis",ar:"غسيل سجاد",en:"Carpet Cleaning",es:"Alfombras",it:"Tappeti",tr:"Hali",nl:"Tapijt",zh:"地毯",hi:"कालीन",de:"Teppichreinigung",pt:"Limpeza de Tapete",icon:"🧺",c:"#558B2F",bg:"#F1F8E9"},
+{id:43,fr:"Nettoyage Chantier",ar:"تنظيف ما بعد البناء",en:"Post Build Cleaning",es:"Limpieza Obra",it:"Cantiere",tr:"Insaat Sonrasi",nl:"Bouwreiniging",zh:"施工后清洁",hi:"निर्माण सफाई",de:"Baureinigung",pt:"Limpeza de Obra",icon:"🧹",c:"#388E3C",bg:"#E8F5E9"},
+{id:44,fr:"Nettoyage Domicile",ar:"تنظيف منازل",en:"Home Cleaning",es:"Limpieza Hogar",it:"Pulizie Casa",tr:"Ev Temizligi",nl:"Thuisreiniging",zh:"家庭清洁",hi:"घर की सफाई",de:"Hausreinigung",pt:"Limpeza Domiciliar",icon:"🏠",c:"#1B5E20",bg:"#E8F5E9"},
+{id:45,fr:"Pressing Lavage Sec",ar:"تنظيف جاف",en:"Dry Cleaning",es:"Tintoreria",it:"Lavanderia",tr:"Kuru Temizleme",nl:"Stomerij",zh:"干洗",hi:"ड्राई क्लीनिंग",de:"Chemischreinigung",pt:"Lavagem a Seco",icon:"👔",c:"#0277BD",bg:"#E1F5FE"},
+{id:46,fr:"Demenagement",ar:"نقل عفش",en:"Moving",es:"Mudanza",it:"Trasloco",tr:"Tasimacilik",nl:"Verhuizing",zh:"搬家",hi:"स्थानांतरण",de:"Umzug",pt:"Mudanca",icon:"📦",c:"#5D4037",bg:"#EFEBE9"},
+{id:47,fr:"Transport Marchandise",ar:"نقل بضائع",en:"Freight",es:"Transporte",it:"Trasporto Merci",tr:"Yuk Tasima",nl:"Goederenvervoer",zh:"货运",hi:"माल परिवहन",de:"Frachttransport",pt:"Transporte de Mercadorias",icon:"🚛",c:"#1565C0",bg:"#E3F2FD"},
+{id:48,fr:"Infographie Design",ar:"تصميم جرافيك",en:"Graphic Design",es:"Diseno Grafico",it:"Grafica",tr:"Grafik",nl:"Grafisch Ontwerp",zh:"平面设计",hi:"ग्राफिक डिज़ाइन",de:"Grafikdesign",pt:"Design Grafico",icon:"🖥️",c:"#0D47A1",bg:"#E3F2FD"},
+{id:49,fr:"Photographie",ar:"تصوير فوتوغرافي",en:"Photography",es:"Fotografia",it:"Fotografia",tr:"Fotografcilik",nl:"Fotografie",zh:"摄影",hi:"फोटोग्राफी",de:"Fotografie",pt:"Fotografia",icon:"📸",c:"#4527A0",bg:"#EDE7F6"},
+{id:50,fr:"Videographie",ar:"تصوير فيديو",en:"Videography",es:"Videografia",it:"Videografia",tr:"Video",nl:"Videografie",zh:"录像",hi:"वीडियोग्राफी",de:"Videografie",pt:"Videografia",icon:"🎬",c:"#880E4F",bg:"#FCE4EC"},
+{id:51,fr:"Organisation Evenements",ar:"تنظيم فعاليات",en:"Event Planning",es:"Eventos",it:"Eventi",tr:"Etkinlik",nl:"Evenementen",zh:"活动策划",hi:"इवेंट",de:"Eventorganisation",pt:"Organizacao de Eventos",icon:"🎉",c:"#6A1B9A",bg:"#F3E5F5"},
+{id:52,fr:"Traiteur",ar:"طباخ وتموين",en:"Catering",es:"Catering",it:"Catering",tr:"Catering",nl:"Catering",zh:"餐饮",hi:"कैटरिंग",de:"Catering",pt:"Catering",icon:"👨‍🍳",c:"#BF360C",bg:"#FBE9E7"},
+{id:53,fr:"Patisserie",ar:"حلويات",en:"Pastry",es:"Pasteleria",it:"Pasticceria",tr:"Pastane",nl:"Banketbakkerij",zh:"糕点",hi:"पेस्ट्री",de:"Konditorei",pt:"Confeitaria",icon:"🎂",c:"#E65100",bg:"#FBE9E7"},
+{id:54,fr:"Cours de Soutien",ar:"دروس خصوصية",en:"Private Tutoring",es:"Clases",it:"Ripetizioni",tr:"Ozel Ders",nl:"Bijles",zh:"家教",hi:"ट्यूटरिंग",de:"Nachhilfe",pt:"Aulas Particulares",icon:"📚",c:"#1565C0",bg:"#E3F2FD"},
+{id:55,fr:"Langues Etrangeres",ar:"لغات اجنبية",en:"Foreign Languages",es:"Idiomas",it:"Lingue",tr:"Yabanci Dil",nl:"Talen",zh:"外语",hi:"भाषाएं",de:"Fremdsprachen",pt:"Idiomas",icon:"🌍",c:"#00695C",bg:"#E0F2F1"},
+{id:56,fr:"Musique",ar:"موسيقى",en:"Music",es:"Musica",it:"Musica",tr:"Muzik",nl:"Muziek",zh:"音乐",hi:"संगीत",de:"Musik",pt:"Musica",icon:"🎵",c:"#AD1457",bg:"#FCE4EC"},
+{id:57,fr:"Sport Fitness",ar:"رياضة ولياقة",en:"Sport Fitness",es:"Deporte",it:"Sport",tr:"Spor",nl:"Sport",zh:"运动",hi:"खेल",de:"Sport Fitness",pt:"Esporte Fitness",icon:"💪",c:"#1B5E20",bg:"#E8F5E9"},
+{id:58,fr:"Gardiennage",ar:"حراسة وامن",en:"Security",es:"Seguridad",it:"Vigilanza",tr:"Guvenlik",nl:"Beveiliging",zh:"保安",hi:"सुरक्षा",de:"Sicherheit",pt:"Seguranca",icon:"🛡️",c:"#37474F",bg:"#ECEFF1"},
+{id:59,fr:"Amenagement Surface",ar:"تهيئة مساحات",en:"Space Planning",es:"Diseno Espacios",it:"Sistemazione",tr:"Alan Duzenleme",nl:"Ruimteplanning",zh:"空间规划",hi:"स्थान योजना",de:"Raumplanung",pt:"Planejamento de Espacos",icon:"📐",c:"#4527A0",bg:"#EDE7F6"},
+{id:60,fr:"Platrerie Decoration",ar:"جبس وديكور",en:"Plastering",es:"Yeso",it:"Intonaco",tr:"Alci",nl:"Pleisterwerk",zh:"抹灰",hi:"प्लास्टरिंग",de:"Verputzen",pt:"Reboco",icon:"🏛️",c:"#6D4C41",bg:"#EFEBE9"},
+{id:61,fr:"Revetements Sol",ar:"ارضيات",en:"Flooring",es:"Suelos",it:"Pavimenti",tr:"Zemin",nl:"Vloer",zh:"地板",hi:"फर्श",de:"Bodenbelag",pt:"Revestimento",icon:"🟫",c:"#8D6E63",bg:"#EFEBE9"},
+{id:62,fr:"Toiture Isolation",ar:"تسقيف وعزل",en:"Roofing",es:"Tejados",it:"Tetto",tr:"Cati",nl:"Dakwerk",zh:"屋顶",hi:"छत",de:"Dacharbeiten",pt:"Telhado",icon:"⛺",c:"#558B2F",bg:"#F1F8E9"},
+{id:63,fr:"Cuisine Equipee",ar:"مطابخ",en:"Fitted Kitchen",es:"Cocina",it:"Cucina",tr:"Mutfak",nl:"Keuken",zh:"厨房",hi:"रसोई",de:"Kuche",pt:"Cozinha Equipada",icon:"🍳",c:"#E65100",bg:"#FBE9E7"},
+{id:64,fr:"Salle de Bain",ar:"حمامات",en:"Bathroom",es:"Bano",it:"Bagno",tr:"Banyo",nl:"Badkamer",zh:"浴室",hi:"बाथरूम",de:"Badezimmer",pt:"Banheiro",icon:"🚿",c:"#0097A7",bg:"#E0F7FA"},
+{id:65,fr:"Decoration Interieure",ar:"ديكور داخلي",en:"Interior Design",es:"Decoracion",it:"Arredamento",tr:"Dekorasyon",nl:"Interieur",zh:"室内设计",hi:"इंटीरियर",de:"Inneneinrichtung",pt:"Decoracao de Interiores",icon:"🛋️",c:"#880E4F",bg:"#FCE4EC"},
+{id:66,fr:"Jardinage",ar:"حدائق",en:"Gardening",es:"Jardineria",it:"Giardinaggio",tr:"Bahcivanlik",nl:"Tuinieren",zh:"园艺",hi:"बागवानी",de:"Gartenarbeit",pt:"Jardinagem",icon:"🌿",c:"#1B5E20",bg:"#E8F5E9"},
+{id:67,fr:"Construction Piscines",ar:"بناء مسابح",en:"Pool Construction",es:"Piscinas",it:"Piscine",tr:"Havuz",nl:"Zwembad",zh:"泳池",hi:"पूल",de:"Poolbau",pt:"Construcao de Piscinas",icon:"🏊",c:"#00838F",bg:"#E0F7FA"},
+{id:68,fr:"Terrassement",ar:"اعمال ترابية",en:"Earthworks",es:"Tierras",it:"Scavi",tr:"Hafriyat",nl:"Grondwerk",zh:"土方",hi:"भूमि",de:"Erdarbeiten",pt:"Terraplenagem",icon:"⛏️",c:"#4E342E",bg:"#EFEBE9"},
+{id:69,fr:"Comptabilite Fiscalite",ar:"محاسبة وضرائب",en:"Accounting",es:"Contabilidad",it:"Contabilita",tr:"Muhasebe",nl:"Boekhouding",zh:"会计",hi:"लेखांकन",de:"Buchhaltung",pt:"Contabilidade",icon:"📊",c:"#1A237E",bg:"#E8EAF6"},
+{id:70,fr:"Groupes Electrogenes",ar:"مولدات كهرباء",en:"Generators",es:"Generadores",it:"Generatori",tr:"Jenerator",nl:"Generatoren",zh:"发电机",hi:"जनरेटर",de:"Generatoren",pt:"Geradores",icon:"⚡",c:"#F57F17",bg:"#FFFDE7"},
+{id:71,fr:"Sanitaire",ar:"اعمال صحية",en:"Sanitary",es:"Sanitario",it:"Sanitari",tr:"Sihhi Tesisat",nl:"Sanitair",zh:"卫生",hi:"स्वच्छता",de:"Sanitaranlagen",pt:"Sanitario",icon:"🔩",c:"#01579B",bg:"#E1F5FE"},
+{id:72,fr:"Pavage Dallage",ar:"رصف طرق",en:"Paving",es:"Pavimentacion",it:"Pavimentazione",tr:"Kaldirim",nl:"Bestrating",zh:"铺路",hi:"पथरी",de:"Pflasterarbeiten",pt:"Pavimentacao",icon:"🛣️",c:"#37474F",bg:"#ECEFF1"},
+{id:73,fr:"Peinture Industrielle",ar:"دهان صناعي",en:"Industrial Painting",es:"Pintura Industrial",it:"Verniciatura",tr:"Endustriyel Boya",nl:"Industrieel Schilderen",zh:"工业涂料",hi:"औद्योगिक पेंटिंग",de:"Industrielackierung",pt:"Pintura Industrial",icon:"🖌️",c:"#0277BD",bg:"#E1F5FE"},
+{id:74,fr:"Broderie",ar:"تطريز",en:"Embroidery",es:"Bordado",it:"Ricamo",tr:"Nakis",nl:"Borduurwerk",zh:"刺绣",hi:"कढ़ाई",de:"Stickerei",pt:"Bordado",icon:"🪡",c:"#AD1457",bg:"#FCE4EC"},
+{id:75,fr:"Cordonnerie",ar:"اصلاح احذية",en:"Shoe Repair",es:"Zapateria",it:"Calzolaio",tr:"Ayakkabi",nl:"Schoenen",zh:"鞋匠",hi:"जूता",de:"Schuhmaker",pt:"Sapateiro",icon:"👟",c:"#5D4037",bg:"#EFEBE9"},
+{id:76,fr:"Boulangerie",ar:"مخبزة",en:"Bakery",es:"Panaderia",it:"Panetteria",tr:"Firincilik",nl:"Bakkerij",zh:"面包店",hi:"बेकरी",de:"Backerei",pt:"Padaria",icon:"🥐",c:"#E65100",bg:"#FBE9E7"},
+{id:77,fr:"Chauffeur Prive",ar:"سائق خاص",en:"Private Driver",es:"Conductor",it:"Autista",tr:"Ozel Sofor",nl:"Chauffeur",zh:"司机",hi:"चालक",de:"Privatfahrer",pt:"Motorista Particular",icon:"🚗",c:"#37474F",bg:"#ECEFF1"},
+{id:78,fr:"Auto Ecole",ar:"تعليم سواقة",en:"Driving School",es:"Autoescuela",it:"Autoscuola",tr:"Surucu Kursu",nl:"Rijschool",zh:"驾校",hi:"ड्राइविंग स्कूल",de:"Fahrschule",pt:"Autoescola",icon:"🏎️",c:"#1B5E20",bg:"#E8F5E9"},
+{id:79,fr:"Imprimerie",ar:"طباعة",en:"Printing",es:"Imprenta",it:"Tipografia",tr:"Matbaa",nl:"Drukkerij",zh:"印刷",hi:"प्रिंटिंग",de:"Druckerei",pt:"Grafica",icon:"🖨️",c:"#00695C",bg:"#E0F2F1"},
+{id:80,fr:"Irrigation Drainage",ar:"ري وصرف",en:"Irrigation",es:"Irrigacion",it:"Irrigazione",tr:"Sulama",nl:"Irrigatie",zh:"灌溉",hi:"सिंचाई",de:"Bewasserung",pt:"Irrigacao",icon:"💧",c:"#0D47A1",bg:"#E3F2FD"},
+{id:81,fr:"Pose de Portes",ar:"تركيب ابواب",en:"Door Installation",es:"Puertas",it:"Porte",tr:"Kapi",nl:"Deuren",zh:"安装门",hi:"दरवाजा",de:"Tureinbau",pt:"Instalacao de Portas",icon:"🚪",c:"#5D4037",bg:"#EFEBE9"},
+{id:82,fr:"Travaux Bois",ar:"اعمال خشبية",en:"Woodworking",es:"Madera",it:"Legno",tr:"Ahsap",nl:"Houtbewerking",zh:"木工活",hi:"लकड़ी",de:"Holzarbeiten",pt:"Trabalhos em Madeira",icon:"🪚",c:"#6D4C41",bg:"#EFEBE9"},
+{id:83,fr:"Informatique Web",ar:"اعلام آلي وويب",en:"IT and Web",es:"Informatica",it:"Informatica",tr:"Bilisim",nl:"IT en Web",zh:"IT",hi:"आईटी",de:"IT und Web",pt:"Informatica e Web",icon:"🌐",c:"#283593",bg:"#E8EAF6"},
+{id:84,fr:"Electronique",ar:"الكترونيات",en:"Electronics",es:"Electronica",it:"Elettronica",tr:"Elektronik",nl:"Elektronica",zh:"电子",hi:"इलेक्ट्रॉनिक्स",de:"Elektronik",pt:"Eletronica",icon:"🔌",c:"#1A237E",bg:"#E8EAF6"},
+{id:85,fr:"Notaire Juridique",ar:"كاتب عدل",en:"Notary Legal",es:"Notaria",it:"Notaio",tr:"Noter",nl:"Notaris",zh:"公证",hi:"नोटरी",de:"Notar",pt:"Notario",icon:"📜",c:"#4A148C",bg:"#EDE7F6"},
+{id:86,fr:"Couture Hommes",ar:"خياطة رجال",en:"Men Tailoring",es:"Sastreria",it:"Sartoria Uomo",tr:"Erkek Terzisi",nl:"Herenklermaker",zh:"男士裁缝",hi:"पुरुष दर्जी",de:"Herrenschneider",pt:"Alfaiate",icon:"👔",c:"#283593",bg:"#E8EAF6"},
+{id:87,fr:"Taxi",ar:"تاكسي",en:"Taxi",es:"Taxi",it:"Taxi",tr:"Taksi",nl:"Taxi",zh:"出租车",hi:"टैक्सी",de:"Taxi",pt:"Taxi",icon:"🚕",c:"#F9A825",bg:"#FFFDE7"},
+{id:88,fr:"Livreur",ar:"عامل توصيل",en:"Delivery Man",es:"Repartidor",it:"Fattorino",tr:"Kurye",nl:"Bezorger",zh:"快递员",hi:"डिलीवरी मैन",de:"Lieferant",pt:"Entregador",icon:"🛵",c:"#E65100",bg:"#FBE9E7"},
+{id:89,fr:"Medecin Generaliste",ar:"طبيب عام",en:"General Practitioner",es:"Medico General",it:"Medico di Base",tr:"Pratisyen Hekim",nl:"Huisarts",zh:"全科医生",hi:"सामान्य चिकित्सक",de:"Hausarzt",pt:"Medico Geral",icon:"🩺",c:"#1565C0",bg:"#E3F2FD"},
+{id:90,fr:"Livraison Express",ar:"توصيل سريع",en:"Express Delivery",es:"Entrega Express",it:"Consegna Express",tr:"Hizli Teslimat",nl:"Expresbezorging",zh:"快递",hi:"डिलीवरी",de:"Expresslieferung",pt:"Entrega Expressa",icon:"📦",c:"#C62828",bg:"#FFEBEE"}
+];
+
+var LANGS=[{c:"fr",f:"🇫🇷",l:"FR"},{c:"ar",f:"🇩🇿",l:"ع"},{c:"en",f:"🇬🇧",l:"EN"},{c:"es",f:"🇪🇸",l:"ES"},{c:"it",f:"🇮🇹",l:"IT"},{c:"tr",f:"🇹🇷",l:"TR"},{c:"nl",f:"🇳🇱",l:"NL"},{c:"zh",f:"🇨🇳",l:"中"},{c:"hi",f:"🇮🇳",l:"हि"},{c:"de",f:"🇩🇪",l:"DE"},{c:"pt",f:"🇧🇷",l:"PT"}];
+
+var lang="fr",craft=null,worker=null,currentUser=null,avFile=null,galFiles=[],chatId=null,chatUnsub=null;
+var AC=["#1565C0","#C62828","#2E7D32","#F57C00","#6A1B9A","#00695C","#4E342E","#AD1457","#283593","#558B2F"];
+
+// ═══════════════════════════════════════
+// معرّف الزائر المجهول — يُحفظ في localStorage
+// ═══════════════════════════════════════
+function getGuestId(){
+  var id = localStorage.getItem("craftoo_guest_id");
+  if(!id){
+    id = "guest_" + Math.random().toString(36).substr(2,9) + "_" + Date.now();
+    localStorage.setItem("craftoo_guest_id", id);
+  }
+  return id;
+}
+var GUEST_ID = getGuestId();
+
+function t(k){return(T[lang]&&T[lang][k])||"";}
+function $(id){return document.getElementById(id);}
+function set(id,v){var e=$(id);if(e)e.textContent=v;}
+function ph(id,v){var e=$(id);if(e)e.placeholder=v;}
+function cn(c){return c[lang]||c.en||c.fr;}
+function ini(n){var s=(n||"").split(" ");return(s.map(function(x){return x[0]||"";}).join("").slice(0,2)||"?").toUpperCase();}
+function ac(id){return AC[Math.abs((id+"").charCodeAt(0))%AC.length];}
+function showToast(msg){var e=$("toast");e.textContent=msg;e.classList.add("show");setTimeout(function(){e.classList.remove("show");},2500);}
+function showErr(id,msg){$(id).innerHTML='<div class="errmsg">'+msg+"</div>";}
+
+function go(s){
+  document.querySelectorAll(".screen").forEach(function(x){x.classList.remove("active");});
+  $("s-"+s).classList.add("active");
+  window.scrollTo(0,0);
+}
+
+function buildLB(){
+  for(var i=0;i<5;i++){
+    var el=$("lb"+i);if(!el)continue;
+    el.innerHTML=LANGS.map(function(l){
+      return'<button class="lb'+(l.c===lang?" on":"")+'" onclick="setLang(\''+l.c+'\')">'+l.f+" "+l.l+"</button>";
+    }).join("");
+  }
+}
+
+function setLang(l){
+  lang=l;
+  document.documentElement.dir=T[l].dir;
+  document.documentElement.lang=l;
+  buildLB();applyT();renderCrafts(CRAFTS);
+  if(craft)loadWorkers(craft.id);
+  if(worker)renderDet(worker);
+}
+
+function applyT(){
+  set("h-sub",t("sub"));ph("inp-home",t("sh"));
+  set("sl-crafts",t("sc"));set("sl-workers",t("sw"));set("sl-country",t("sy"));set("sl-all",t("sa"));
+  set("bk1",t("bk"));ph("inp-craft",t("sw2"));set("reg-btn",t("rb"));
+  set("bk2",t("bk"));set("wdet-t",t("wt"));
+  set("bk3",t("bk"));ph("chat-in",t("cph"));
+  set("bk4",t("bk"));set("reg-t",t("rt"));
+  set("t-reg",t("tr2"));set("t-log",t("tl"));
+  set("l-name",t("ln"));set("lbl-login-pass",t("lp"));set("l-conf",t("lc"));
+  set("l-tel",t("lt"));set("l-pay",t("lpa"));set("l-vil",t("lv"));
+  set("l-com",t("lco"));set("l-met",t("lm"));set("l-gal",t("lg"));
+  set("btn-reg",t("br2"));set("lbl-pass2",t("lp"));set("btn-log",t("bl"));
+  set("av-hint",t("ah"));
+  var hlbt=$("home-login-t");if(hlbt)hlbt.textContent=t("tl");
+  document.querySelectorAll(".fi,.fsel").forEach(function(e){
+    e.style.direction=T[lang].dir;
+    e.style.textAlign=T[lang].dir==="rtl"?"right":"left";
+  });
+  loadTotalWorkers();
+}
+
+function loadTotalWorkers(){
+  DB.collection("workers").get().then(function(snap){set("sl-wnum",snap.size);}).catch(function(){});
+}
+
+function renderCrafts(list){
+  var g=$("grid");g.innerHTML="";
+  set("sl-cnt",list.length);
+  list.forEach(function(c){
+    var d=document.createElement("div");
+    d.className="cc";d.style.borderColor=c.bg;
+    d.innerHTML='<div class="cc-ic" style="background:'+c.bg+'">'+c.icon+'</div>'+
+      '<div class="cc-n" style="color:'+c.c+'">'+cn(c)+'</div>'+
+      '<div class="cc-b" id="cnt'+c.id+'">0 '+t("art")+"</div>";
+    d.onclick=(function(id){return function(){openCraft(id);};})(c.id);
+    g.appendChild(d);
+  });
+  DB.collection("workers").get().then(function(snap){
+    var counts={};
+    snap.forEach(function(d){var w=d.data();if(w.craftId)counts[w.craftId]=(counts[w.craftId]||0)+1;});
+    set("sl-wnum",snap.size);
+    list.forEach(function(c){var el=$("cnt"+c.id);if(el)el.textContent=(counts[c.id]||0)+" "+t("art");});
+  }).catch(function(){});
+}
+
+function filterCrafts(){
+  var q=$("inp-home").value.trim().toLowerCase();
+  renderCrafts(q?CRAFTS.filter(function(c){
+    return Object.values(c).some(function(v){return typeof v==="string"&&v.toLowerCase().includes(q);});
+  }):CRAFTS);
+}
+
+function openCraft(id){
+  craft=CRAFTS.find(function(c){return c.id===id;});
+  $("chdr").style.background="linear-gradient(135deg,"+craft.c+"DD,"+craft.c+")";
+  set("chdr-t",craft.icon+" "+cn(craft));
+  $("inp-craft").value="";
+  loadWorkers(id);go("craft");
+}
+
+function loadWorkers(craftId){
+  $("w-list").innerHTML='<div class="spinner-wrap"><div class="spinner"></div></div>';
+  DB.collection("workers").where("craftId","==",craftId).get().then(function(snap){
+    var list=[];
+    snap.forEach(function(d){list.push(Object.assign({id:d.id},d.data()));});
+    list.sort(function(a,b){
+      var sa=(b.supports||0)-(a.supports||0);
+      if(sa!==0)return sa;
+      return (b.ratingAvg||0)-(a.ratingAvg||0);
+    });
+    renderW(list);
+  }).catch(function(){
+    $("w-list").innerHTML='<div class="empty"><div class="ei">⚠️</div><div class="et">Erreur connexion</div></div>';
+  });
+}
+
+function filterW(){if(!craft)return;loadWorkers(craft.id);}
+
+function renderW(list){
+  var el=$("w-list");el.innerHTML="";
+  set("w-cnt",list.length+" "+t("av"));
+  if(!list.length){
+    el.innerHTML='<div class="empty"><div class="ei">👷</div><div class="et">'+t("nw")+'</div><div class="es">'+t("ns")+"</div></div>";
+    return;
+  }
+  var now=Date.now();
+  list.forEach(function(w){
+    var suspUntil=w.suspUntil?(w.suspUntil.toMillis?w.suspUntil.toMillis():w.suspUntil):0;
+    var susp=suspUntil>now;
+    var avg=w.ratingAvg?w.ratingAvg.toFixed(1):"—";
+    var stars="⭐".repeat(Math.round(w.ratingAvg||0));
+    var d=document.createElement("div");d.className="wc";
+    d.innerHTML=
+      '<div class="av" style="background:'+ac(w.id)+'">'+(w.photoURL?'<img src="'+w.photoURL+'">':"")+(w.photoURL?"":ini(w.name||""))+"</div>"+
+      '<div style="flex:1;min-width:0"><div class="wn">'+(w.name||"")+"</div>"+
+      '<div class="wl">📍 '+(w.commune||"")+", "+(w.city||"")+", "+(w.country||"")+"</div>"+
+      '<div class="wp">📞 '+(w.phone||"")+"</div>"+
+      '<div class="ws">'+stars+" "+avg+" ("+(w.ratingCount||0)+")</div></div>"+
+      '<div style="font-size:20px;color:#CCC">›</div>'+
+      (susp?'<span class="stag">⛔</span>':"");
+    d.onclick=(function(id){return function(){openW(id);};})(w.id);
+    el.appendChild(d);
+  });
+}
+
+function openW(id){
+  $("wdet").innerHTML='<div class="spinner-wrap"><div class="spinner"></div></div>';
+  go("worker");
+  DB.collection("workers").doc(id).get().then(function(snap){
+    if(!snap.exists)return;
+    worker=Object.assign({id:snap.id},snap.data());
+    renderDet(worker);
+  }).catch(function(){});
+}
+
+function renderDet(w){
+  var c=CRAFTS.find(function(x){return x.id===w.craftId;})||CRAFTS[0];
+  var now=Date.now();
+  var suspUntil=w.suspUntil?(w.suspUntil.toMillis?w.suspUntil.toMillis():w.suspUntil):0;
+  var susp=suspUntil>now;
+  var avg=w.ratingAvg?w.ratingAvg.toFixed(1):"—";
+  var full=Math.round(w.ratingAvg||0);
+  var sh="⭐".repeat(full)+"☆".repeat(5-full);
+  var galH=w.gallery&&w.gallery.length?w.gallery.map(function(u){return'<div class="gi"><img src="'+u+'"></div>';}).join(""):[1,2,3,4,5,6].map(function(){return'<div class="gi">🖼️</div>';}).join("");
+
+  if(susp){
+    $("wdet").innerHTML='<div class="ssc"><div class="si">⛔</div><div class="st2">'+t("st")+'</div><div class="ss2">'+t("sm")+"</div></div>";
+    return;
+  }
+
+  var el=$("wdet");el.innerHTML="";
+  var dc=document.createElement("div");dc.className="dc";
+  dc.innerHTML=
+    '<div class="dav" style="background:'+ac(w.id)+'">'+(w.photoURL?'<img src="'+w.photoURL+'">':"")+(w.photoURL?"":ini(w.name||""))+"</div>"+
+    '<div class="dn">'+(w.name||"")+"</div>"+
+    '<div class="dbw"><span class="dbg" style="background:'+c.bg+";color:"+c.c+'">'+c.icon+" "+cn(c)+"</span></div>"+
+    '<div class="ar"><span class="an">'+avg+'</span><span class="as2">'+sh+'</span><span class="ac2">('+( w.ratingCount||0)+")</span></div>"+
+    '<div class="ir"><div class="iri">📞</div><div><div class="irl">'+t("ph")+'</div><div class="irv">'+(w.phone||"")+"</div></div></div>"+
+    '<div class="ir"><div class="iri">📍</div><div><div class="irl">'+t("co")+'</div><div class="irv">'+(w.commune||"")+"</div></div></div>"+
+    '<div class="ir"><div class="iri">🏙️</div><div><div class="irl">'+t("ci")+'</div><div class="irv">'+(w.city||"")+"</div></div></div>"+
+    '<div class="ir"><div class="iri">🌍</div><div><div class="irl">'+t("cy")+'</div><div class="irv">'+(w.country||"")+"</div></div></div>"+
+    '<div class="ir"><div class="iri">✉️</div><div><div class="irl">Email</div><div class="irv">'+(w.email||"")+"</div></div></div>";
+
+  var b1=document.createElement("button");b1.className="btn-g";b1.textContent="📞 "+t("ca");
+  b1.onclick=(function(ph){return function(){window.open("tel:"+ph);};})(w.phone||"");
+
+  var b2=document.createElement("button");b2.className="btn-b";b2.textContent="💬 "+t("cb");
+  // الزبون يدردش مباشرة بدون تسجيل
+  b2.onclick=(function(id,nm){return function(){openChat(id,nm);};})(w.id,w.name||"");
+
+  var b3=document.createElement("button");b3.className="btn-s";
+  b3.textContent="⬆️ "+t("sup")+" ("+(w.supports||0)+")";
+  b3.onclick=(function(id){return function(){doSupport(id);};})(w.id);
+
+  dc.appendChild(b1);dc.appendChild(b2);dc.appendChild(b3);
+  el.appendChild(dc);
+
+  var rs=document.createElement("div");rs.className="rs";
+  rs.innerHTML='<div class="rt2">⭐ '+t("rat")+"</div>";
+  var sr=document.createElement("div");sr.className="sr";
+  [1,2,3,4,5].forEach(function(i){
+    var sb=document.createElement("button");sb.className="sb2";sb.id="sb"+i;sb.textContent="☆";
+    sb.onclick=(function(n,wid){return function(){doRate(n,wid);};})(i,w.id);
+    sr.appendChild(sb);
+  });
+  rs.appendChild(sr);el.appendChild(rs);
+
+  var gc=document.createElement("div");gc.className="gc";
+  gc.innerHTML='<div class="gt">🖼️ '+t("cg")+'</div><div class="gg">'+galH+"</div>";
+  el.appendChild(gc);
+}
+
+function doSupport(wid){
+  var uid = currentUser ? currentUser.uid : GUEST_ID;
+  var ref=DB.collection("workers").doc(wid);
+  DB.collection("supports").doc(uid+"_"+wid).get().then(function(snap){
+    if(snap.exists){showToast("✅ Déjà soutenu!");return;}
+    return DB.collection("supports").doc(uid+"_"+wid).set({
+      userId:uid,workerId:wid,createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function(){
+      return ref.update({supports:firebase.firestore.FieldValue.increment(1)});
+    }).then(function(){showToast("⬆️ Merci!");openW(wid);});
+  }).catch(function(e){showToast("Erreur: "+e.message);});
+}
+
+function doRate(n,wid){
+  for(var i=1;i<=5;i++){var e=$("sb"+i);if(e)e.textContent=i<=n?"⭐":"☆";}
+  var ref=DB.collection("workers").doc(wid);
+  ref.get().then(function(snap){
+    if(!snap.exists)return;
+    var d=snap.data();
+    var oc=d.ratingCount||0,oa=d.ratingAvg||0;
+    return ref.update({ratingAvg:((oa*oc)+n)/(oc+1),ratingCount:oc+1});
+  }).then(function(){showToast("⭐ "+t("ok"));}).catch(function(){});
+}
+
+function confRep(wid){
+  $("m-t").textContent=t("rpt");$("m-b").textContent=t("rpb");
+  $("m-nk").textContent=t("rnk");$("m-ok").textContent=t("rok");
+  $("m-ok").onclick=function(){doRep(wid);};
+  $("modal").classList.add("show");
+}
+function closeMo(){$("modal").classList.remove("show");}
+
+function doRep(wid){
+  closeMo();
+  var ref=DB.collection("workers").doc(wid);
+  ref.get().then(function(snap){
+    if(!snap.exists)return;
+    var reports=(snap.data().reports||0)+1;
+    var update={reports:reports};
+    if(reports>=5){var dt=new Date();dt.setDate(dt.getDate()+30);update.suspUntil=dt;}
+    return ref.update(update);
+  }).then(function(){showToast("🚨 "+t("ok"));openW(wid);}).catch(function(){});
+}
+
+var chatWorkerId=null;
+function chatReport(){if(chatWorkerId)confRep(chatWorkerId);}
+
+// ═══════════════════════════════════════
+// فتح الدردشة — الزبون زائر مجهول بدون تسجيل
+// ═══════════════════════════════════════
+function openChat(wid, wname){
+  chatWorkerId = wid;
+
+  // ═══════════════════════════════════════════
+  // الزبون (غير مسجل) → يدردش مباشرة كزائر
+  // الحرفي (مسجل)    → ينتظر Firebase يتأكد
+  // ═══════════════════════════════════════════
+
+  if(currentUser){
+    // المستخدم مسجل بالفعل → افتح مباشرة
+    startChat(wid, wname, currentUser.uid, false);
+    return;
+  }
+
+  // انتظر Firebase قليلاً (موبايل بطيء)
+  var resolved = false;
+
+  var unsub = AUTH.onAuthStateChanged(function(user){
+    if(resolved) return;
+    resolved = true;
+    unsub();
+    if(user){
+      // حرفي مسجل
+      currentUser = user;
+      startChat(wid, wname, user.uid, false);
+    } else {
+      // زبون مجهول → يدردش مباشرة بدون تسجيل
+      startChat(wid, wname, GUEST_ID, true);
+    }
+  });
+
+  // بعد 3 ثوان إذا لم يرد Firebase → زبون مجهول
+  setTimeout(function(){
+    if(!resolved){
+      resolved = true;
+      startChat(wid, wname, GUEST_ID, true);
+    }
+  }, 3000);
+}
+
+function startChat(wid, wname, senderId, isGuest){
+  if(chatUnsub) chatUnsub();
+
+  chatId = [senderId, wid].sort().join("_");
+
+  set("chat-t", "💬 " + wname);
+  ph("chat-in", t("cph"));
+
+  // شارة الزائر
+  var bar = $("guest-info-bar");
+  bar.innerHTML = isGuest ? '<div class="guest-badge">👤 ' + t("guest") + '</div>' : "";
+
+  $("chat-m").innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  go("chat");
+
+  chatUnsub = DB.collection("chats").doc(chatId).collection("messages")
+    .orderBy("createdAt").onSnapshot(function(snap){
+      var msgs = [];
+      snap.forEach(function(d){ msgs.push(d.data()); });
+      renderMsgs(msgs, senderId);
+    });
+}
+
+function renderMsgs(msgs, senderId){
+  var el=$("chat-m");el.innerHTML="";
+  if(!msgs.length){
+    el.innerHTML='<div style="text-align:center;padding:30px;color:#AAA;font-size:13px">💬 '+(t("ns")||"...")+"</div>";
+    return;
+  }
+  msgs.forEach(function(m){
+    var me = m.senderId === senderId;
+    var time=m.createdAt?(new Date(m.createdAt.toMillis?m.createdAt.toMillis():m.createdAt)).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"";
+    var d=document.createElement("div");
+    d.className="msg "+(me?"mme":"mth");
+    // إذا المرسل زائر مجهول نعرض "Visiteur" بدل الاسم
+    var senderLabel = m.senderName || t("guest");
+    if(!me){
+      d.innerHTML='<div class="msender">'+senderLabel+'</div>'+m.text+'<div class="mt3">'+time+"</div>";
+    } else {
+      d.innerHTML=m.text+'<div class="mt3">'+time+"</div>";
+    }
+    el.appendChild(d);
+  });
+  el.scrollTop=el.scrollHeight;
+}
+
+function sendMsg(){
+  var inp=$("chat-in");
+  var text=inp.value.trim();
+  if(!text||!chatId)return;
+  inp.value="";
+
+  // استخدم نفس المعرّف الذي فُتحت به الدردشة
+  var senderId = currentUser ? currentUser.uid : GUEST_ID;
+  var senderName = currentUser ? (currentUser.displayName||currentUser.email||"Artisan") : t("guest");
+
+  DB.collection("chats").doc(chatId).collection("messages").add({
+    text: text,
+    senderId: senderId,
+    senderName: senderName,
+    isGuest: !currentUser,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+var PHONE_PREFIXES={"Afghanistan":"+93","Afrique du Sud":"+27","Albanie":"+355","Algerie":"+213","Allemagne":"+49","Andorre":"+376","Angola":"+244","Arabie Saoudite":"+966","Argentine":"+54","Armenie":"+374","Australie":"+61","Autriche":"+43","Azerbaidjan":"+994","Bahamas":"+1","Bahrein":"+973","Bangladesh":"+880","Belgique":"+32","Benin":"+229","Bielorussie":"+375","Birmanie":"+95","Bolivie":"+591","Bosnie":"+387","Botswana":"+267","Bresil":"+55","Brunei":"+673","Bulgarie":"+359","Burkina Faso":"+226","Burundi":"+257","Cambodge":"+855","Cameroun":"+237","Canada":"+1","Cap-Vert":"+238","Centrafrique":"+236","Chili":"+56","Chine":"+86","Chypre":"+357","Colombie":"+57","Comores":"+269","Congo":"+242","Coree du Nord":"+850","Coree du Sud":"+82","Costa Rica":"+506","Cote d Ivoire":"+225","Croatie":"+385","Cuba":"+53","Danemark":"+45","Djibouti":"+253","Egypte":"+20","Emirats arabes unis":"+971","Equateur":"+593","Espagne":"+34","Estonie":"+372","Etats-Unis":"+1","Ethiopie":"+251","Fidji":"+679","Finlande":"+358","France":"+33","Gabon":"+241","Gambie":"+220","Georgie":"+995","Ghana":"+233","Grece":"+30","Guatemala":"+502","Guinee":"+224","Guyana":"+592","Haiti":"+509","Honduras":"+504","Hongrie":"+36","Inde":"+91","Indonesie":"+62","Irak":"+964","Iran":"+98","Irlande":"+353","Islande":"+354","Israel":"+972","Italie":"+39","Jamaique":"+1","Japon":"+81","Jordanie":"+962","Kazakhstan":"+7","Kenya":"+254","Koweit":"+965","Laos":"+856","Lettonie":"+371","Liban":"+961","Liberia":"+231","Libye":"+218","Lituanie":"+370","Luxembourg":"+352","Madagascar":"+261","Malaisie":"+60","Malawi":"+265","Mali":"+223","Malte":"+356","Maroc":"+212","Maurice":"+230","Mauritanie":"+222","Mexique":"+52","Moldavie":"+373","Monaco":"+377","Mongolie":"+976","Montenegre":"+382","Mozambique":"+258","Namibie":"+264","Nepal":"+977","Nicaragua":"+505","Niger":"+227","Nigeria":"+234","Norvege":"+47","Nouvelle-Zelande":"+64","Oman":"+968","Ouganda":"+256","Ouzbekistan":"+998","Pakistan":"+92","Palestine":"+970","Panama":"+507","Paraguay":"+595","Pays-Bas":"+31","Perou":"+51","Philippines":"+63","Pologne":"+48","Portugal":"+351","Qatar":"+974","Roumanie":"+40","Royaume-Uni":"+44","Russie":"+7","Rwanda":"+250","Salvador":"+503","Senegal":"+221","Serbie":"+381","Sierra Leone":"+232","Singapour":"+65","Slovaquie":"+421","Slovenie":"+386","Somalie":"+252","Soudan":"+249","Sri Lanka":"+94","Suede":"+46","Suisse":"+41","Syrie":"+963","Tanzanie":"+255","Tchad":"+235","Tcheque":"+420","Thailande":"+66","Togo":"+228","Tunisie":"+216","Turquie":"+90","Ukraine":"+380","Uruguay":"+598","Venezuela":"+58","Vietnam":"+84","Yemen":"+967","Zambie":"+260","Zimbabwe":"+263"};
+
+function updatePhonePrefix(){
+  var country=$("r-pay").value;
+  var el=$("phone-prefix");
+  if(el)el.textContent=PHONE_PREFIXES[country]||"+";
+}
+
+function buildCountries(){
+  var sel=$("r-pay");
+  sel.innerHTML='<option value="">'+t("cpay")+"</option>"+
+    COUNTRIES.map(function(c){return'<option value="'+c+'">'+c+"</option>";}).join("");
+}
+
+function goLoginHome(){
+  var sel=$("r-met");
+  if(sel){sel.innerHTML='<option value="">'+t("cp")+"</option>"+CRAFTS.map(function(cr){return'<option value="'+cr.id+'">'+cr.icon+" "+cn(cr)+"</option>";}).join("");}
+  buildCountries();
+  $("e-reg").innerHTML="";$("e-log").innerHTML="";
+  swTab("log");go("reg");
+}
+
+function goReg(){
+  var sel=$("r-met");
+  sel.innerHTML='<option value="">'+t("cp")+"</option>"+CRAFTS.map(function(c){return'<option value="'+c.id+'">'+c.icon+" "+cn(c)+"</option>";}).join("");
+  if(craft)sel.value=craft.id;
+  buildCountries();buildGalUp();
+  $("e-reg").innerHTML="";$("e-log").innerHTML="";
+  go("reg");
+}
+
+function swTab(tab){
+  $("t-reg").classList.toggle("on",tab==="reg");
+  $("t-log").classList.toggle("on",tab==="log");
+  $("f-reg").style.display=tab==="reg"?"block":"none";
+  $("f-log").style.display=tab==="log"?"block":"none";
+}
+
+function prevAv(inp){
+  if(!inp.files[0])return;avFile=inp.files[0];
+  var r=new FileReader();
+  r.onload=function(e){$("apr").innerHTML='<img src="'+e.target.result+'">';};
+  r.readAsDataURL(avFile);
+}
+
+function buildGalUp(){
+  var g=$("gal-up");if(!g)return;g.innerHTML="";
+  for(var i=0;i<6;i++){
+    var d=document.createElement("div");
+    if(galFiles[i]){
+      d.className="gi";d.style.position="relative";d.style.cursor="default";
+      var delBtn=document.createElement("button");
+      delBtn.textContent="×";
+      delBtn.style.cssText="position:absolute;top:3px;right:3px;background:#C62828;color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:14px;cursor:pointer;z-index:10;font-weight:900;line-height:1;";
+      delBtn.onclick=(function(idx){return function(e){e.stopPropagation();delGal(idx);};})(i);
+      var imgEl=document.createElement("img");
+      imgEl.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:9px;";
+      (function(el,f){var r=new FileReader();r.onload=function(ev){el.src=ev.target.result;};r.readAsDataURL(f);})(imgEl,galFiles[i]);
+      d.appendChild(imgEl);d.appendChild(delBtn);
+    } else {
+      d.className="gi gia";d.textContent="➕";
+      d.onclick=function(){$("gal-file").click();};
+    }
+    g.appendChild(d);
+  }
+}
+
+function delGal(i){galFiles.splice(i,1);buildGalUp();}
+
+function prevGal(inp){
+  Array.from(inp.files).forEach(function(f){if(galFiles.length<6)galFiles.push(f);});
+  inp.value="";buildGalUp();
+}
+
+function togglePass(inputId,btnId){
+  var inp=document.getElementById(inputId);var btn=document.getElementById(btnId);if(!inp)return;
+  if(inp.getAttribute("type")==="password"){inp.setAttribute("type","text");if(btn)btn.textContent="🙈";}
+  else{inp.setAttribute("type","password");if(btn)btn.textContent="👁️";}
+}
+
+function fileToBase64(file,maxW,quality){
+  maxW=maxW||800;quality=quality||0.6;
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();
+    r.onload=function(e){
+      var img=new Image();
+      img.onload=function(){
+        var w=img.width,h=img.height;
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+        var canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL("image/jpeg",quality));
+      };
+      img.src=e.target.result;
+    };
+    r.onerror=reject;r.readAsDataURL(file);
+  });
+}
+
+function doReg(){
+  var name=$("r-name").value.trim(),email=$("r-email").value.trim();
+  var pass=$("r-pass").value,conf=$("r-conf").value;
+  var phone=$("r-tel").value.trim(),country=$("r-pay").value;
+  var city=$("r-vil").value.trim(),commune=$("r-com").value.trim();
+  var craftId=parseInt($("r-met").value)||0;
+  var missing=[];
+  if(!name)missing.push("Nom");if(!email)missing.push("Email");
+  if(!pass)missing.push("Mot de passe");if(!phone)missing.push("Telephone");
+  if(!country)missing.push("Pays");if(!craftId)missing.push("Metier");
+  if(missing.length){showErr("e-reg",t("ef")+": "+missing.join(", "));return;}
+  if(pass!==conf){showErr("e-reg",t("ep"));return;}
+  $("btn-reg").textContent=t("send");
+  Promise.all([
+    avFile?fileToBase64(avFile,400,0.5):Promise.resolve(""),
+    Promise.all(galFiles.map(function(f){return fileToBase64(f,600,0.5);}))
+  ]).then(function(results){
+    var photoURL=results[0],gallery=results[1];
+    return AUTH.createUserWithEmailAndPassword(email,pass).then(function(cred){
+      return DB.collection("workers").doc(cred.user.uid).set({
+        name:name,email:email,phone:phone,country:country,city:city,commune:commune,
+        craftId:craftId,photoURL:photoURL,gallery:gallery,
+        reports:0,ratingAvg:0,ratingCount:0,
+        trialStart:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function(){return cred;});
+    });
+  }).then(function(cred){
+    currentUser=cred.user;
+    craft=CRAFTS.find(function(c){return c.id===craftId;});
+    showToast(t("ok"));
+    $("r-name").value="";$("r-email").value="";$("r-pass").value="";$("r-conf").value="";
+    $("r-tel").value="";$("r-vil").value="";$("r-com").value="";$("r-pay").value="";$("r-met").value="";
+    $("apr").innerHTML="&#128247;";avFile=null;galFiles=[];buildGalUp();
+    loadWorkers(craftId);go("craft");
+  }).catch(function(e){
+    showErr("e-reg",e.code==="auth/email-already-in-use"?t("ee"):e.message);
+  }).finally(function(){$("btn-reg").textContent=t("br2");});
+}
+
+function doLog(){
+  var lemail=document.getElementById("l-email");
+  var lpass=document.getElementById("l-pass");
+  var email=lemail?lemail.value.trim():"";
+  var pass=lpass?lpass.value:"";
+  if(!email||!pass){showErr("e-log",t("ef"));return;}
+  $("btn-log").textContent=t("send");
+  AUTH.signInWithEmailAndPassword(email,pass).then(function(cred){
+    currentUser=cred.user;
+    return DB.collection("workers").doc(cred.user.uid).get();
+  }).then(function(snap){
+    if(snap.exists){
+      var data=snap.data();
+      craft=CRAFTS.find(function(c){return c.id===data.craftId;});
+      if(craft){loadWorkers(craft.id);go("craft");}else go("home");
+    }else go("home");
+    showToast(t("ok"));
+  }).catch(function(err){
+    var msg=err.code==="auth/wrong-password"?"Mot de passe incorrect":
+            err.code==="auth/user-not-found"?"Email introuvable":
+            err.code==="auth/invalid-email"?"Email invalide":
+            err.message||t("en2");
+    showErr("e-log",msg);
+  }).finally(function(){$("btn-log").textContent=t("bl");});
+}
+
+AUTH.onAuthStateChanged(function(user){currentUser=user;});
+
+document.addEventListener("DOMContentLoaded",function(){
+  $("bk1").onclick=function(){go("home");};
+  $("bk2").onclick=function(){go("craft");};
+  $("bk3").onclick=function(){go("worker");};
+  $("bk4").onclick=function(){go("craft");};
+  $("reg-btn").onclick=function(){goReg();};
+  $("t-reg").onclick=function(){swTab("reg");};
+  $("t-log").onclick=function(){swTab("log");};
+  $("btn-reg").onclick=function(){doReg();};
+  $("btn-log").onclick=function(){doLog();};
+  var e1=document.getElementById("eye1");if(e1)e1.onclick=function(){togglePass("r-pass","eye1");};
+  var e2=document.getElementById("eye2");if(e2)e2.onclick=function(){togglePass("r-conf","eye2");};
+  var e3=document.getElementById("eye3");if(e3)e3.onclick=function(){togglePass("l-pass","eye3");};
+  $("m-nk").onclick=function(){closeMo();};
+  $("chat-send").onclick=function(){sendMsg();};
+  $("chat-in").onkeydown=function(e){if(e.key==="Enter")sendMsg();};
+  $("apr").onclick=function(){$("av-file").click();};
+  $("av-file").onchange=function(){prevAv(this);};
+  $("gal-file").onchange=function(){prevGal(this);};
+  buildLB();applyT();renderCrafts(CRAFTS);
+});
+</script>
+</body>
+</html>
+
