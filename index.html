@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
 <meta charset="UTF-8">
@@ -15,8 +15,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .screen{display:none;flex-direction:column;height:100%;overflow:hidden;}
 .screen.active{display:flex;}
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;}
-.lb-bar{background:#0A3880;display:flex;justify-content:center;gap:4px;padding:6px 8px;flex-shrink:0;flex-wrap:wrap;}
-.lb{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);border-radius:20px;padding:4px 9px;font-size:11px;cursor:pointer;font-weight:700;}
+.lb-bar{background:#0A3880;display:flex;justify-content:center;gap:4px;padding:6px 8px;flex-shrink:0;flex-wrap:wrap;min-height:38px;}
+.lb{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.8);border-radius:20px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1;min-height:27px;}
+.lb-flag{width:19px;height:13px;border-radius:2px;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.2);}
+.lb-flag svg{display:block;width:100%;height:100%;}
 .lb.on{background:#fff;color:#0A3880;}
 .hdr{background:linear-gradient(135deg,#1565C0,#0D47A1);color:#fff;padding:13px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .hdr-t{flex:1;font-size:16px;font-weight:800;}
@@ -130,6 +132,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ss2{font-size:13px;color:#888;line-height:1.6;}
 /* شارة الزائر في الدردشة */
 .guest-badge{background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:7px 12px;margin:8px 10px;font-size:11px;color:#795548;text-align:center;}
+.home-actions{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.home-action{background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.5);color:#fff;border-radius:20px;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;}
+.image-viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;display:none;align-items:center;justify-content:center;padding:24px;}
+.image-viewer.show{display:flex;}
+.image-viewer img{display:block;max-width:100%;max-height:calc(100vh - 48px);object-fit:contain;border-radius:8px;}
+.image-viewer-close{position:absolute;top:12px;right:14px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:30px;line-height:1;cursor:pointer;}
+.zoomable-image{cursor:zoom-in;}
 </style>
 </head>
 <body>
@@ -138,12 +147,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="s-home" class="screen active">
   <div class="lb-bar" id="lb0"></div>
   <div class="hero">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;">
       <div>
         <div class="app-name">Craft<span>oo</span></div>
         <div style="font-size:12px;opacity:.85;margin-top:2px;" id="h-sub"></div>
       </div>
-      <button id="home-login-btn" onclick="goLoginHome()" style="background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.5);color:#fff;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🔑 <span id="home-login-t">Se connecter</span></button>
+      <div class="home-actions">
+        <button class="home-action" id="home-signup-btn" onclick="goSignupHome()">📝 <span id="home-signup-t">S'inscrire</span></button>
+        <button class="home-action" id="home-login-btn" onclick="goLoginHome()">🔑 <span id="home-login-t">Se connecter</span></button>
+      </div>
     </div>
     <div class="hero-sh"><span>🔍</span><input id="inp-home" oninput="filterCrafts()"></div>
   </div>
@@ -269,6 +281,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="mbtn mok" id="m-ok"></button>
     </div>
   </div>
+</div>
+<div class="image-viewer" id="image-viewer" role="dialog" aria-modal="true" aria-hidden="true" onclick="if(event.target===this)closeImageViewer()">
+  <button class="image-viewer-close" type="button" aria-label="Fermer" onclick="closeImageViewer()">×</button>
+  <img id="image-viewer-img" alt="Image agrandie" onclick="event.stopPropagation()">
 </div>
 <div class="toast" id="toast"></div>
 
@@ -401,8 +417,22 @@ var CRAFTS=[
 ];
 
 var LANGS=[{c:"fr",f:"🇫🇷",l:"FR"},{c:"ar",f:"🇩🇿",l:"ع"},{c:"en",f:"🇬🇧",l:"EN"},{c:"es",f:"🇪🇸",l:"ES"},{c:"it",f:"🇮🇹",l:"IT"},{c:"tr",f:"🇹🇷",l:"TR"},{c:"nl",f:"🇳🇱",l:"NL"},{c:"zh",f:"🇨🇳",l:"中"},{c:"hi",f:"🇮🇳",l:"हि"},{c:"de",f:"🇩🇪",l:"DE"},{c:"pt",f:"🇧🇷",l:"PT"}];
+var LANG_FLAG_SVG={
+  fr:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#0055A4" d="M0 0h10v20H0z"/><path fill="#fff" d="M10 0h10v20H10z"/><path fill="#EF4135" d="M20 0h10v20H20z"/></svg>',
+  ar:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#006233" d="M0 0h15v20H0z"/><path fill="#fff" d="M15 0h15v20H15z"/><circle cx="15.8" cy="10" r="5" fill="#D21034"/><circle cx="17.5" cy="8.8" r="4.2" fill="#fff"/><path fill="#D21034" d="m20.4 6.2.8 2.1 2.2.1-1.7 1.4.6 2.1-1.9-1.2-1.8 1.2.6-2.1-1.7-1.4 2.2-.1z"/></svg>',
+  en:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#012169" d="M0 0h30v20H0z"/><path d="M0 0 30 20M30 0 0 20" stroke="#fff" stroke-width="4"/><path d="M0 0 30 20M30 0 0 20" stroke="#C8102E" stroke-width="1.5"/><path d="M15 0v20M0 10h30" stroke="#fff" stroke-width="6"/><path d="M15 0v20M0 10h30" stroke="#C8102E" stroke-width="2.8"/></svg>',
+  es:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#AA151B" d="M0 0h30v5H0zM0 15h30v5H0z"/><path fill="#F1BF00" d="M0 5h30v10H0z"/></svg>',
+  it:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#009246" d="M0 0h10v20H0z"/><path fill="#fff" d="M10 0h10v20H10z"/><path fill="#CE2B37" d="M20 0h10v20H20z"/></svg>',
+  tr:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#E30A17" d="M0 0h30v20H0z"/><circle cx="12" cy="10" r="5" fill="#fff"/><circle cx="14" cy="9" r="4" fill="#E30A17"/><path fill="#fff" d="m19 6.2 1.1 2.5 2.7.2-2.1 1.7.7 2.6-2.4-1.4-2.3 1.4.7-2.6-2.1-1.7 2.7-.2z"/></svg>',
+  nl:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#AE1C28" d="M0 0h30v6.67H0z"/><path fill="#fff" d="M0 6.67h30v6.66H0z"/><path fill="#21468B" d="M0 13.33h30V20H0z"/></svg>',
+  zh:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#DE2910" d="M0 0h30v20H0z"/><path fill="#FFDE00" d="m6 3 1 2.5 2.7.2-2.1 1.7.7 2.6L6 8.6l-2.3 1.4.7-2.6-2.1-1.7L5 5.5z"/></svg>',
+  hi:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#FF9933" d="M0 0h30v6.67H0z"/><path fill="#fff" d="M0 6.67h30v6.66H0z"/><path fill="#138808" d="M0 13.33h30V20H0z"/><circle cx="15" cy="10" r="2.7" fill="none" stroke="#000080" stroke-width=".65"/><circle cx="15" cy="10" r=".45" fill="#000080"/></svg>',
+  de:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#000" d="M0 0h30v6.67H0z"/><path fill="#D00" d="M0 6.67h30v6.66H0z"/><path fill="#FFCE00" d="M0 13.33h30V20H0z"/></svg>',
+  pt:'<svg viewBox="0 0 30 20" aria-hidden="true"><path fill="#009739" d="M0 0h12v20H0z"/><path fill="#FEDD00" d="m12 2 15 8-15 8L3 10z"/><circle cx="15" cy="10" r="4.1" fill="#012169"/></svg>'
+};
 
-var lang="fr",craft=null,worker=null,currentUser=null,avFile=null,galFiles=[],chatId=null,chatUnsub=null;
+var lang="fr",craft=null,worker=null,currentUser=null,avFile=null,galFiles=[],chatId=null,chatUnsub=null,allCraftWorkers=[];
+var screenHistory=["home"];
 var AC=["#1565C0","#C62828","#2E7D32","#F57C00","#6A1B9A","#00695C","#4E342E","#AD1457","#283593","#558B2F"];
 
 // ═══════════════════════════════════════
@@ -428,19 +458,36 @@ function ac(id){return AC[Math.abs((id+"").charCodeAt(0))%AC.length];}
 function showToast(msg){var e=$("toast");e.textContent=msg;e.classList.add("show");setTimeout(function(){e.classList.remove("show");},2500);}
 function showErr(id,msg){$(id).innerHTML='<div class="errmsg">'+msg+"</div>";}
 
-function go(s){
+function currentScreenName(){
+  var active=document.querySelector(".screen.active");
+  return active?active.id.replace(/^s-/,""):"home";
+}
+
+function showScreen(s){
   document.querySelectorAll(".screen").forEach(function(x){x.classList.remove("active");});
-  $("s-"+s).classList.add("active");
+  var target=$("s-"+s);
+  if(!target)return;
+  target.classList.add("active");
   window.scrollTo(0,0);
 }
 
+function go(s){
+  var current=currentScreenName();
+  if(current!==s)screenHistory.push(s);
+  showScreen(s);
+}
+
+function goBack(){
+  if(screenHistory.length>1)screenHistory.pop();
+  showScreen(screenHistory[screenHistory.length-1]||"home");
+}
+
 function buildLB(){
-  for(var i=0;i<5;i++){
-    var el=$("lb"+i);if(!el)continue;
+  document.querySelectorAll(".lb-bar").forEach(function(el){
     el.innerHTML=LANGS.map(function(l){
-      return'<button class="lb'+(l.c===lang?" on":"")+'" onclick="setLang(\''+l.c+'\')">'+l.f+" "+l.l+"</button>";
+      return'<button class="lb'+(l.c===lang?" on":"")+'" onclick="setLang(\''+l.c+'\')"><span class="lb-flag" aria-hidden="true">'+(LANG_FLAG_SVG[l.c]||l.f)+'</span><span>'+l.l+"</span></button>";
     }).join("");
-  }
+  });
 }
 
 function setLang(l){
@@ -466,6 +513,7 @@ function applyT(){
   set("btn-reg",t("br2"));set("lbl-pass2",t("lp"));set("btn-log",t("bl"));
   set("av-hint",t("ah"));
   var hlbt=$("home-login-t");if(hlbt)hlbt.textContent=t("tl");
+  var hsbt=$("home-signup-t");if(hsbt)hsbt.textContent=t("tr2");
   document.querySelectorAll(".fi,.fsel").forEach(function(e){
     e.style.direction=T[lang].dir;
     e.style.textAlign=T[lang].dir==="rtl"?"right":"left";
@@ -514,6 +562,7 @@ function openCraft(id){
 
 function loadWorkers(craftId){
   $("w-list").innerHTML='<div class="spinner-wrap"><div class="spinner"></div></div>';
+  allCraftWorkers=[];
   DB.collection("workers").where("craftId","==",craftId).get().then(function(snap){
     var list=[];
     snap.forEach(function(d){list.push(Object.assign({id:d.id},d.data()));});
@@ -522,13 +571,32 @@ function loadWorkers(craftId){
       if(sa!==0)return sa;
       return (b.ratingAvg||0)-(a.ratingAvg||0);
     });
-    renderW(list);
+    allCraftWorkers=list;
+    renderW(filterWorkerResults(list));
   }).catch(function(){
     $("w-list").innerHTML='<div class="empty"><div class="ei">⚠️</div><div class="et">Erreur connexion</div></div>';
   });
 }
 
-function filterW(){if(!craft)return;loadWorkers(craft.id);}
+function normalizeSearchText(value){
+  return (value||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+}
+
+function filterWorkerResults(list){
+  var input=$("inp-craft");
+  var query=normalizeSearchText(input?input.value:"");
+  if(!query)return list;
+  return list.filter(function(w){
+    var name=normalizeSearchText(w.name);
+    var city=normalizeSearchText(w.city);
+    return name.includes(query)||city.includes(query);
+  });
+}
+
+function filterW(){
+  if(!craft)return;
+  renderW(filterWorkerResults(allCraftWorkers));
+}
 
 function renderW(list){
   var el=$("w-list");el.innerHTML="";
@@ -594,6 +662,8 @@ function renderDet(w){
     '<div class="ir"><div class="iri">🏙️</div><div><div class="irl">'+t("ci")+'</div><div class="irv">'+(w.city||"")+"</div></div></div>"+
     '<div class="ir"><div class="iri">🌍</div><div><div class="irl">'+t("cy")+'</div><div class="irv">'+(w.country||"")+"</div></div></div>"+
     '<div class="ir"><div class="iri">✉️</div><div><div class="irl">Email</div><div class="irv">'+(w.email||"")+"</div></div></div>";
+  var profileImage=dc.querySelector(".dav img");
+  if(profileImage)bindZoomImage(profileImage);
 
   var b1=document.createElement("button");b1.className="btn-g";b1.textContent="📞 "+t("ca");
   b1.onclick=(function(ph){return function(){window.open("tel:"+ph);};})(w.phone||"");
@@ -621,7 +691,31 @@ function renderDet(w){
 
   var gc=document.createElement("div");gc.className="gc";
   gc.innerHTML='<div class="gt">🖼️ '+t("cg")+'</div><div class="gg">'+galH+"</div>";
+  gc.querySelectorAll(".gi img").forEach(function(img){bindZoomImage(img);});
   el.appendChild(gc);
+}
+
+function bindZoomImage(img){
+  img.classList.add("zoomable-image");
+  img.addEventListener("click",function(e){
+    e.stopPropagation();
+    openImageViewer(img.src);
+  });
+}
+
+function openImageViewer(src){
+  if(!src)return;
+  $("image-viewer-img").src=src;
+  $("image-viewer").classList.add("show");
+  $("image-viewer").setAttribute("aria-hidden","false");
+}
+
+function closeImageViewer(){
+  var viewer=$("image-viewer");
+  if(!viewer)return;
+  viewer.classList.remove("show");
+  viewer.setAttribute("aria-hidden","true");
+  $("image-viewer-img").src="";
 }
 
 function doSupport(wid){
@@ -801,6 +895,11 @@ function goLoginHome(){
   swTab("log");go("reg");
 }
 
+function goSignupHome(){
+  goReg();
+  swTab("reg");
+}
+
 function goReg(){
   var sel=$("r-met");
   sel.innerHTML='<option value="">'+t("cp")+"</option>"+CRAFTS.map(function(c){return'<option value="'+c.id+'">'+c.icon+" "+cn(c)+"</option>";}).join("");
@@ -946,10 +1045,11 @@ function doLog(){
 AUTH.onAuthStateChanged(function(user){currentUser=user;});
 
 document.addEventListener("DOMContentLoaded",function(){
-  $("bk1").onclick=function(){go("home");};
-  $("bk2").onclick=function(){go("craft");};
-  $("bk3").onclick=function(){go("worker");};
-  $("bk4").onclick=function(){go("craft");};
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeImageViewer();});
+  $("bk1").onclick=function(){goBack();};
+  $("bk2").onclick=function(){goBack();};
+  $("bk3").onclick=function(){goBack();};
+  $("bk4").onclick=function(){goBack();};
   $("reg-btn").onclick=function(){goReg();};
   $("t-reg").onclick=function(){swTab("reg");};
   $("t-log").onclick=function(){swTab("log");};
@@ -969,4 +1069,3 @@ document.addEventListener("DOMContentLoaded",function(){
 </script>
 </body>
 </html>
-
