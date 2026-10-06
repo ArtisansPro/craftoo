@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
@@ -336,12 +335,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="terms-footer">
     <div class="terms-check">
-      <input type="checkbox" id="terms-cb" onchange="toggleAccept()">
+      <input type="checkbox" id="terms-cb" onclick="toggleAccept()">
       <label for="terms-cb">أقر بأنني قرأت جميع "الشروط والأحكام وسياسة الاستخدام" الخاصة بتطبيق Craftoo وأوافق على الالتزام بها كاملاً.</label>
     </div>
     <div class="terms-btns">
       <button class="terms-decline" onclick="declineTerms()">إلغاء / رفض</button>
-      <button class="terms-accept" id="terms-accept-btn" disabled onclick="acceptTerms()">✅ أوافق وأتابع</button>
+      <button class="terms-accept" id="terms-accept-btn" onclick="acceptTerms()" style="opacity:0.4;pointer-events:none;">✅ أوافق وأتابع</button>
     </div>
   </div>
 </div>
@@ -537,23 +536,44 @@ function handleFSTap(){
 // ── TERMS & CONDITIONS ──────────────────────────────
 function checkTerms(){
   try{
-    if(localStorage.getItem("craftoo_terms_accepted")==="yes"){
-      document.getElementById("terms-ov").style.display="none";
+    var accepted=localStorage.getItem("craftoo_terms_accepted");
+    if(accepted==="yes"){
+      // Already accepted before - hide immediately
+      var ov=document.getElementById("terms-ov");
+      if(ov)ov.style.display="none";
     }
+    // else: keep showing the terms screen
   }catch(e){
-    document.getElementById("terms-ov").style.display="none";
+    // localStorage not available - just hide
+    var ov=document.getElementById("terms-ov");
+    if(ov)ov.style.display="none";
   }
 }
 
 function toggleAccept(){
   var cb=document.getElementById("terms-cb");
   var btn=document.getElementById("terms-accept-btn");
-  if(btn)btn.disabled=!cb.checked;
+  if(!btn)return;
+  if(cb.checked){
+    btn.style.opacity="1";
+    btn.style.pointerEvents="auto";
+    btn.style.cursor="pointer";
+  } else {
+    btn.style.opacity="0.4";
+    btn.style.pointerEvents="none";
+  }
 }
 
 function acceptTerms(){
+  var cb=document.getElementById("terms-cb");
+  if(!cb||!cb.checked)return;
   try{localStorage.setItem("craftoo_terms_accepted","yes");}catch(e){}
-  document.getElementById("terms-ov").style.display="none";
+  var ov=document.getElementById("terms-ov");
+  if(ov){
+    ov.style.opacity="0";
+    ov.style.transition="opacity 0.3s";
+    setTimeout(function(){ov.style.display="none";},300);
+  }
 }
 
 function declineTerms(){
@@ -1301,3 +1321,7 @@ window.addEventListener("load",function(){
     renderCrafts(CRAFTS);
   }
 });
+</script>
+</body>
+</html>
+
