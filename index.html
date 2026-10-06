@@ -335,12 +335,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="terms-footer">
     <div class="terms-check">
-      <input type="checkbox" id="terms-cb" onclick="toggleAccept()">
+      <input type="checkbox" id="terms-cb">
       <label for="terms-cb">أقر بأنني قرأت جميع "الشروط والأحكام وسياسة الاستخدام" الخاصة بتطبيق Craftoo وأوافق على الالتزام بها كاملاً.</label>
     </div>
     <div class="terms-btns">
-      <button class="terms-decline" onclick="declineTerms()">إلغاء / رفض</button>
-      <button class="terms-accept" id="terms-accept-btn" onclick="acceptTerms()" style="opacity:0.4;pointer-events:none;">✅ أوافق وأتابع</button>
+      <button class="terms-decline" id="terms-decline-btn">إلغاء / رفض</button>
+      <button class="terms-accept" id="terms-accept-btn" style="opacity:0.4;">✅ أوافق وأتابع</button>
     </div>
   </div>
 </div>
@@ -553,27 +553,14 @@ function checkTerms(){
 function toggleAccept(){
   var cb=document.getElementById("terms-cb");
   var btn=document.getElementById("terms-accept-btn");
-  if(!btn)return;
-  if(cb.checked){
-    btn.style.opacity="1";
-    btn.style.pointerEvents="auto";
-    btn.style.cursor="pointer";
-  } else {
-    btn.style.opacity="0.4";
-    btn.style.pointerEvents="none";
-  }
+  if(!btn||!cb)return;
+  btn.style.opacity=cb.checked?"1":"0.4";
 }
 
 function acceptTerms(){
-  var cb=document.getElementById("terms-cb");
-  if(!cb||!cb.checked)return;
   try{localStorage.setItem("craftoo_terms_accepted","yes");}catch(e){}
   var ov=document.getElementById("terms-ov");
-  if(ov){
-    ov.style.opacity="0";
-    ov.style.transition="opacity 0.3s";
-    setTimeout(function(){ov.style.display="none";},300);
-  }
+  if(ov)ov.style.display="none";
 }
 
 function declineTerms(){
@@ -609,6 +596,15 @@ function setLang(l){
   document.documentElement.dir=T[l].dir;
   document.documentElement.lang=l;
   checkTerms();
+  var tcb=document.getElementById("terms-cb");
+  var tab=document.getElementById("terms-accept-btn");
+  var tdb=document.getElementById("terms-decline-btn");
+  if(tcb)tcb.addEventListener("change",toggleAccept);
+  if(tab)tab.addEventListener("click",function(){
+    var cb=document.getElementById("terms-cb");
+    if(cb&&cb.checked)acceptTerms();
+  });
+  if(tdb)tdb.addEventListener("click",declineTerms);
   buildLB();applyT();renderCrafts(CRAFTS);
   if(craft)loadWorkers(craft.id);
   if(worker)renderDet(worker);
@@ -1324,4 +1320,3 @@ window.addEventListener("load",function(){
 </script>
 </body>
 </html>
-
